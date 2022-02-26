@@ -4,6 +4,8 @@ use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 use crate::game::phys_layers::PhysLayer;
 
+use crate::game::timer::GameTimer;
+
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
     pub loading_state: S,
@@ -22,6 +24,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state)
+                .with_system(init_game_timer)
                 .with_system(setup_scene)
         );
         app.add_system_set(
@@ -37,6 +40,14 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
 pub struct DevAssets {
     #[asset(key = "enviro.map_prototype")]
     map_prototype: Handle<Image>,
+}
+
+fn init_game_timer(
+    mut commands: Commands,
+) {
+    let mut timer = Timer::from_seconds(99.9 * 60.0, false);
+    timer.pause();
+    commands.insert_resource(GameTimer(timer));
 }
 
 fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {

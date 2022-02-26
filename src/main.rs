@@ -16,7 +16,7 @@ pub enum GameMode {
 
 /// Application states
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
-enum AppState {
+pub enum AppState {
     MainAssetLoading,
     MainMenu,
     GameAssetLoading(GameMode),
