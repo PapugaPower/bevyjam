@@ -1,6 +1,11 @@
 use crate::game::shooting::{LastShootTime, Weapon};
 use bevy::prelude::*;
+use bevy::render::view::Layer;
+use heron::{CollisionLayers, CollisionShape, RigidBody};
+use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
+use heron::rapier_plugin::rapier2d::geometry::ColliderShape;
 use crate::game::crosshair::Crosshair;
+use crate::game::phys_layers::PhysLayer;
 
 #[derive(Component)]
 pub struct Player {
@@ -8,9 +13,9 @@ pub struct Player {
 }
 
 pub fn init_player(mut commands: Commands) {
-    let player_tform = Transform::from_scale(Vec3::new(32.0, 32.0, 1.0));
+    let player_tform = Transform::from_scale(Vec3::new(48.0, 48.0, 1.0));
 
-    commands
+    let x = commands
         .spawn_bundle(SpriteBundle {
             transform: player_tform,
             sprite: Sprite {
@@ -26,15 +31,21 @@ pub fn init_player(mut commands: Commands) {
             spread: 90.0,
             num_bullets_per_shot: 5,
         })
-        .insert(LastShootTime { time: 0.0 });
+        .insert(LastShootTime { time: 0.0 })
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::Player)
+            .with_masks(&[PhysLayer::World, PhysLayer::Enemies]))
+        .insert(CollisionShape::Sphere { radius: 24.0 });
 }
 
-pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform, With<Player>>,
+pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform, &CollisionShape), With<Player>>,
                                        xhair_q: Query<&Crosshair>, 
                                        keys: Res<Input<KeyCode>>, 
-                                       time: Res<Time>
+                                       time: Res<Time>, 
+                                       physics_world: PhysicsWorld
 ) {
-    let mut player_tform = player_tform_q.single_mut();
+    let (mut player_tform, player_col) = player_tform_q.single_mut();
     let xhair = xhair_q.single();
     let mut mouse_pos_level = xhair.mouse_pos;
     mouse_pos_level.z = 0.0;
@@ -43,22 +54,51 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform,
     let angle = direction.y.atan2(direction.x);
     player_tform.rotation = Quat::from_axis_angle(Vec3::Z, angle);
     
-    let mut movement_vec = Vec3::ZERO;
+    let mut kb_inupt_vector = Vec3::ZERO;
     if keys.pressed(KeyCode::W) {
-        movement_vec += Vec3::Y;
+        kb_inupt_vector += Vec3::Y;
     }
 
     if keys.pressed(KeyCode::S) {
-        movement_vec -= Vec3::Y;
+        kb_inupt_vector -= Vec3::Y;
     }
 
     if keys.pressed(KeyCode::A) {
-        movement_vec -= Vec3::X;
-    }
-
-    if keys.pressed(KeyCode::D) {
-        movement_vec += Vec3::X;
+        kb_inupt_vector -= Vec3::X;
     }
     
-    player_tform.translation = player_tform.translation + (movement_vec * 140.0 * time.delta_seconds()); 
+    if keys.pressed(KeyCode::D) {
+        kb_inupt_vector += Vec3::X;
+    }
+    
+    let mut final_movement_vector = kb_inupt_vector * 180.0 * time.delta_seconds();
+    
+    // We re-check for collisions and calulate movement deflection three times, 
+    // and discard inputs on the fourth - better make the player stand still 
+    // if the geometry is too restrictive.
+    for iter in 0..4{
+        let hit = physics_world.shape_cast_with_filter(
+            &player_col,
+            player_tform.translation,
+            player_tform.rotation,
+            final_movement_vector * 1.1,
+            CollisionLayers::none().with_group(PhysLayer::Player).with_mask(PhysLayer::World),
+            |entitity| true);
+
+        if let Some(collision) = hit {
+            if let ShapeCastCollisionType::Collided(info) = collision.collision_type{
+                if iter == 3 {
+                    final_movement_vector = Vec3::ZERO;
+                    break;
+                }
+                let cross = info.self_normal.cross(Vec3::Z);
+                final_movement_vector = cross * cross.dot(final_movement_vector);
+            } else if let ShapeCastCollisionType::AlreadyPenetrating = collision.collision_type{
+                // TODO: If there are collision artifacts resulting in this being called,
+                // implement a "last trusted position" local resource to be reverted to.
+            }
+        }
+    }
+    
+    player_tform.translation = player_tform.translation + final_movement_vector;
 }

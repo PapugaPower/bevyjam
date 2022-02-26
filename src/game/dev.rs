@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
+use crate::game::phys_layers::PhysLayer;
 
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
@@ -49,7 +50,10 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             },
             transform: Transform::from_translation(Vec3::new(0.0, 100.0, 0.0)),
             ..Default::default()
-        })
+        })        
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::Enemies)
+            .with_masks(&[PhysLayer::World, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(RigidBody::Dynamic)
         .insert(CollisionShape::Sphere { radius: 20.0 });
 
@@ -67,6 +71,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
@@ -83,6 +90,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
@@ -101,6 +111,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
@@ -117,6 +130,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
@@ -135,6 +151,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
@@ -151,6 +170,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             ..Default::default()
         })
         .insert(RigidBody::Static)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::World)
+            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,

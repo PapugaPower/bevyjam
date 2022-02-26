@@ -17,6 +17,8 @@ pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
+mod phys_layers;
+
 pub use dev::DevPlaygroundPlugin;
 
 /// This plugin should add all common game systems used in all levels
