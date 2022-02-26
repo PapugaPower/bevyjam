@@ -47,6 +47,10 @@ git = "https://github.com/PapugaPower/benimator"
 git = "https://github.com/PapugaPower/bevy_asset_loader"
 features = ["dynamic_assets"]
 
+[dependencies.heron]
+git = "https://github.com/PapugaPower/heron"
+features = ["2d"]
+
 # Enable only a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
