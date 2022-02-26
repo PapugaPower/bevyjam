@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
-/// This plugin should add all Scenario1 specific stuff
+/// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState> {
     pub state: S,
 }

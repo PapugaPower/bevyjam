@@ -24,12 +24,6 @@ pub fn setup_crosshair(mut commands: Commands) {
     println!("Crosshair initialized.");
 }
 
-pub fn tear_down_crosshair(mut commands: Commands, q: Query<(Entity), With<Crosshair>>){
-    let crosshair_entity = q.single();
-    
-    commands.entity(crosshair_entity).despawn();
-}
-
 pub fn crosshair_positon_update_system(mut q: Query<(&mut Transform, &Crosshair)>){
     let (mut xhair_tform, xhair) = q.single_mut();
     xhair_tform.translation = xhair.mouse_pos;

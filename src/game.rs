@@ -5,6 +5,7 @@ mod shooting;
 
 use bevy::prelude::*;
 use iyes_bevy_util::BevyState;
+use iyes_bevy_util::despawn_with;
 
 use crate::game::crosshair::*;
 use crate::game::main_camera::*;
@@ -15,8 +16,6 @@ pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
-
-
 pub use dev::DevPlaygroundPlugin;
 
 /// This plugin should add all common game systems used in all levels
@@ -46,9 +45,9 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             )
             .add_system_set(
                 SystemSet::on_exit(self.state.clone())
-                    .with_system(tear_down_crosshair)
-                    .with_system(tear_down_player)
-                    .with_system(tear_down_bullets)
+                    .with_system(despawn_with::<Crosshair>)
+                    .with_system(despawn_with::<Player>)
+                    .with_system(despawn_with::<Bullet>)
             );
     }
 }

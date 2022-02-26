@@ -29,11 +29,6 @@ pub fn init_player(mut commands: Commands) {
         .insert(LastShootTime { time: 0.0 });
 }
 
-pub fn tear_down_player(mut commands: Commands, q: Query<Entity, With<Player>>) {
-    let player_entity = q.single();
-    commands.entity(player_entity).despawn();
-}
-
 pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform, With<Player>>,
                                        xhair_q: Query<&Crosshair>, 
                                        keys: Res<Input<KeyCode>>, 

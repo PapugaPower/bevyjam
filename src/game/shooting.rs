@@ -106,9 +106,3 @@ pub fn bullets_despawn(
         }
     }
 }
-
-pub fn tear_down_bullets(mut commands: Commands, query: Query<Entity, With<Bullet>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
-    }
-}
