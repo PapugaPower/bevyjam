@@ -19,6 +19,7 @@ pub enum GameMode {
 enum AppState {
     MainAssetLoading,
     MainMenu,
+    GameAssetLoading(GameMode),
     InGame(GameMode),
     GameOverWin,
     GameOverLose,
@@ -58,8 +59,8 @@ fn main() {
         .continue_to_state(AppState::MainMenu)
         .with_asset_collection_file("meta/ui.assets")
         .with_asset_collection_file("meta/game.assets")
-        .with_collection::<UiAssets>()
-        .with_collection::<GameAssets>()
+        .with_collection::<ui::UiAssets>()
+        .with_collection::<game::GameAssets>()
         .build(&mut app);
 
     // our game stuff
@@ -70,8 +71,14 @@ fn main() {
         app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });
     }
 
-    app.add_plugin(game::DevPlaygroundPlugin { state: AppState::InGame(GameMode::DevPlayground) });
-    app.add_plugin(game::Scenario1Plugin { state: AppState::InGame(GameMode::Scenario1) });
+    app.add_plugin(game::DevPlaygroundPlugin {
+        loading_state: AppState::GameAssetLoading(GameMode::DevPlayground),
+        state: AppState::InGame(GameMode::DevPlayground),
+    });
+    app.add_plugin(game::Scenario1Plugin {
+        loading_state: AppState::GameAssetLoading(GameMode::Scenario1),
+        state: AppState::InGame(GameMode::Scenario1),
+    });
 
     // debug systems; uncomment if needed
     //app.add_system(debug_state);
@@ -84,18 +91,4 @@ fn debug_state(
     state: Res<State<AppState>>,
 ) {
     debug!("Current AppState: {:?}", state.current());
-}
-
-#[derive(AssetCollection)]
-struct UiAssets {
-    #[asset(key = "ui.font_menu_bold")]
-    font_menu_bold: Handle<Font>,
-    #[asset(key = "ui.font_menu_regular")]
-    font_menu_regular: Handle<Font>,
-}
-
-#[derive(AssetCollection)]
-struct GameAssets {
-    #[asset(key = "enviro.map_prototype")]
-    map_prototype: Handle<Image>,
 }

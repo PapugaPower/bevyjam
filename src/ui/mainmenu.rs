@@ -2,7 +2,8 @@ use bevy::{prelude::*, app::AppExit};
 
 use iyes_bevy_util::{despawn_with_recursive};
 
-use crate::{GameMode, AppState, UiAssets};
+use crate::{GameMode, AppState};
+use super::UiAssets;
 
 #[derive(Component)]
 struct MainMenuCleanup;
@@ -176,7 +177,7 @@ fn btn_impl_entergame(
     mut state: ResMut<State<AppState>>,
 ) {
     if let Some(gm) = clicked {
-        state.set(AppState::InGame(gm.0)).unwrap();
+        state.set(AppState::GameAssetLoading(gm.0)).unwrap();
     }
 }
 

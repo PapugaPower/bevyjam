@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
 
 pub mod mainmenu;
 
@@ -9,6 +10,14 @@ impl Plugin for UiSetupPlugin {
         app.add_startup_system(init_ui_camera);
         app.add_system(button_interact_visual);
     }
+}
+
+#[derive(AssetCollection)]
+pub struct UiAssets {
+    #[asset(key = "ui.font_menu_bold")]
+    font_menu_bold: Handle<Font>,
+    #[asset(key = "ui.font_menu_regular")]
+    font_menu_regular: Handle<Font>,
 }
 
 fn button_connector<B: Component + Clone>(

@@ -1,21 +1,44 @@
-use crate::GameAssets;
 use bevy::prelude::*;
+use bevy_asset_loader::{AssetCollection, AssetLoader};
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
 /// This plugin should add all DevPlayground specific stuff
-pub struct DevPlaygroundPlugin<S: BevyState> {
+pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
+    pub loading_state: S,
     pub state: S,
 }
 
-impl<S: BevyState> Plugin for DevPlaygroundPlugin<S> {
+impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
     fn build(&self, app: &mut App) {
+        // asset loader
+        AssetLoader::new(self.loading_state)
+            .continue_to_state(self.state)
+            .with_asset_collection_file("meta/dev.assets")
+            .with_collection::<DevAssets>()
+            .build(app);
+
         // add systems to `self.state`
-        app.add_system_set(SystemSet::on_enter(self.state.clone()).with_system(setup_scene));
+        app.add_system_set(
+            SystemSet::on_enter(self.state)
+                .with_system(setup_scene)
+        );
+        app.add_system_set(
+            SystemSet::on_update(self.state)
+        );
+        app.add_system_set(
+            SystemSet::on_exit(self.state)
+        );
     }
 }
 
-fn setup_scene(mut commands: Commands, assets: Res<GameAssets>) {
+#[derive(AssetCollection)]
+pub struct DevAssets {
+    #[asset(key = "enviro.map_prototype")]
+    map_prototype: Handle<Image>,
+}
+
+fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     // enemy
     commands
         .spawn_bundle(SpriteBundle {

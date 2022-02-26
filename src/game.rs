@@ -4,6 +4,7 @@ mod player;
 mod shooting;
 
 use bevy::prelude::*;
+use bevy_asset_loader::AssetCollection;
 use iyes_bevy_util::BevyState;
 use iyes_bevy_util::despawn_with;
 
@@ -31,23 +32,27 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
                 .with_system(init_player)
-        )
-            .add_system_set(
-                SystemSet::on_update(self.state.clone())
-                    .with_system(crosshair_positon_update_system)
-                    .with_system(mouse_pos_to_wspace_system)
-                    .with_system(recalculate_camera_desination_system)
-                    .with_system(refresh_camera_position_system)
-                    .with_system(transfer_input_to_player_system)
-                    .with_system(player_shoot)
-                    .with_system(bullets_despawn)
-                    .with_system(bullets_collision)
-            )
-            .add_system_set(
-                SystemSet::on_exit(self.state.clone())
-                    .with_system(despawn_with::<Crosshair>)
-                    .with_system(despawn_with::<Player>)
-                    .with_system(despawn_with::<Bullet>)
-            );
+        );
+        app.add_system_set(
+            SystemSet::on_update(self.state.clone())
+                .with_system(crosshair_positon_update_system)
+                .with_system(mouse_pos_to_wspace_system)
+                .with_system(recalculate_camera_desination_system)
+                .with_system(refresh_camera_position_system)
+                .with_system(transfer_input_to_player_system)
+                .with_system(player_shoot)
+                .with_system(bullets_despawn)
+                .with_system(bullets_collision)
+        );
+        app.add_system_set(
+            SystemSet::on_exit(self.state.clone())
+                .with_system(despawn_with::<Crosshair>)
+                .with_system(despawn_with::<Player>)
+                .with_system(despawn_with::<Bullet>)
+        );
     }
+}
+
+#[derive(AssetCollection)]
+pub struct GameAssets {
 }
