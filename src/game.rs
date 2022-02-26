@@ -1,5 +1,6 @@
 mod crosshair;
 mod main_camera;
+mod inventory;
 mod player;
 mod shooting;
 
@@ -43,6 +44,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(player_shoot)
                 .with_system(bullets_despawn)
                 .with_system(bullets_collision)
+                .with_system(inventory::pickup_items)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
