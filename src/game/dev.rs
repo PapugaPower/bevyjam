@@ -1,3 +1,4 @@
+use super::inventory::*;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use heron::prelude::*;
@@ -167,4 +168,22 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),
     });
+
+    // inventory items
+    struct GreenBoxThing;
+    impl IsInventoryItem for GreenBoxThing {}
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(5.0, 5.0)),
+                color: Color::GREEN,
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(100.0, 20.0, 0.05),
+            ..Default::default()
+        })
+        .insert(InventoryItemHolder::new(InventoryItem::new(
+            "green box",
+            GreenBoxThing,
+        )));
 }

@@ -1,3 +1,4 @@
+use super::inventory::{Inventory, InventoryItemAttractor};
 use crate::game::shooting::{LastShootTime, Weapon};
 use bevy::prelude::*;
 use crate::game::crosshair::Crosshair;
@@ -26,7 +27,9 @@ pub fn init_player(mut commands: Commands) {
             spread: 90.0,
             num_bullets_per_shot: 5,
         })
-        .insert(LastShootTime { time: 0.0 });
+        .insert(LastShootTime { time: 0.0 })
+        .insert(Inventory::default())
+        .insert(InventoryItemAttractor::with_radius(20.0));
 }
 
 pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform, With<Player>>,
@@ -38,11 +41,11 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform,
     let xhair = xhair_q.single();
     let mut mouse_pos_level = xhair.mouse_pos;
     mouse_pos_level.z = 0.0;
-    
+
     let mut direction = mouse_pos_level - player_tform.translation;
     let angle = direction.y.atan2(direction.x);
     player_tform.rotation = Quat::from_axis_angle(Vec3::Z, angle);
-    
+
     let mut movement_vec = Vec3::ZERO;
     if keys.pressed(KeyCode::W) {
         movement_vec += Vec3::Y;
@@ -59,6 +62,6 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<&mut Transform,
     if keys.pressed(KeyCode::D) {
         movement_vec += Vec3::X;
     }
-    
-    player_tform.translation = player_tform.translation + (movement_vec * 140.0 * time.delta_seconds()); 
+
+	player_tform.translation = player_tform.translation + (movement_vec * 140.0 * time.delta_seconds());
 }

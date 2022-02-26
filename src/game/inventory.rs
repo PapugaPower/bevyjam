@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use std::any::Any;
 
 /// Collection of items. Can be used on a player, chest ...
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Inventory {
     items: Vec<InventoryItem>,
 }
@@ -24,6 +24,16 @@ pub struct InventoryItem {
     pub item: Box<dyn IsInventoryItem>,
 }
 
+impl InventoryItem {
+    /// Create a new inventory item.
+    pub fn new(name: impl Into<String>, item: impl IsInventoryItem) -> Self {
+        Self {
+            item: Box::new(item),
+            name: name.into(),
+        }
+    }
+}
+
 /// Component that can hold a single item. This uses an Option so we can move items with
 /// [`Option::Take`].
 #[derive(Component)]
@@ -31,6 +41,16 @@ pub struct InventoryItemHolder {
     pub item: Option<InventoryItem>,
     /// Whether to despawn the entity if the item is picked up.
     pub despawn_on_pickup: bool,
+}
+
+impl InventoryItemHolder {
+    /// Create new holder.
+    pub fn new(item: InventoryItem) -> Self {
+        Self {
+            item: Some(item),
+            despawn_on_pickup: true,
+        }
+    }
 }
 
 /// A component that allows automatically picking up inventory items.
