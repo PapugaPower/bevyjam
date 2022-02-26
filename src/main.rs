@@ -3,10 +3,11 @@ use bevy_asset_loader::{AssetLoader, AssetCollection};
 
 use enum_iterator::IntoEnumIterator;
 
+mod game;
 mod ui;
 
 /// Each level/map in the game
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
 #[derive(IntoEnumIterator)]
 pub enum GameMode {
     Scenario1,
@@ -14,7 +15,7 @@ pub enum GameMode {
 }
 
 /// Application states
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
 enum AppState {
     MainAssetLoading,
     MainMenu,
@@ -62,6 +63,10 @@ fn main() {
     // our game stuff
     app.add_plugin(ui::UiSetupPlugin);
     app.add_plugin(ui::mainmenu::MainMenuPlugin);
+
+    for mode in GameMode::into_enum_iter() {
+        app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });
+    }
 
     // debug systems; uncomment if needed
     //app.add_system(debug_state);
