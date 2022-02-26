@@ -1,0 +1,90 @@
+[package]
+name = "bevyjam"
+version = "0.0.0"
+edition = "2021"
+resolver = "2"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy_loading = { git = "https://github.com/IyesGames/bevy_loading" }
+iyes_bevy_util = { git = "https://github.com/IyesGames/iyes_bevy_util" }
+
+[dependencies.bevy]
+version = "0.6.1"
+default-features = false
+features = [
+	# file formats (no audio, use kira)
+	"png",
+	# linux windowing systems
+	"x11",
+	"wayland",
+	# gamepad support
+	"bevy_gilrs",
+	# windowing
+	"bevy_winit",
+	# render stuff: only 2d and ui, no 3d
+	"bevy_core_pipeline",
+	"bevy_render",
+	"bevy_sprite",
+	"bevy_text",
+	"bevy_ui",
+]
+
+[dependencies.bevy_kira_audio]
+git = "https://github.com/PapugaPower/bevy_kira_audio"
+default-features = false
+features = ["flac"]
+
+[dependencies.bevy_tweening]
+git = "https://github.com/PapugaPower/bevy_tweening"
+
+[dependencies.benimator]
+git = "https://github.com/PapugaPower/benimator"
+
+[dependencies.bevy_asset_loader]
+git = "https://github.com/PapugaPower/bevy_asset_loader"
+features = ["dynamic_assets"]
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+# Enable high optimizations for dependencies (incl. Bevy), but not for our code:
+[profile.dev.package."*"]
+opt-level = 2
+
+# Optimize release builds for size, use LTO
+[profile.release]
+opt-level = "z"
+lto = "thin"
+strip = true
+
+[patch.crates-io.bevy]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_core]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_ecs]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_app]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_reflect]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_sprite]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
+
+[patch.crates-io.bevy_asset]
+git = "https://github.com/PapugaPower/bevy"
+tag = "v0.6.1"
