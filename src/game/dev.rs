@@ -1,7 +1,7 @@
+use crate::GameAssets;
 use bevy::prelude::*;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
-use crate::GameAssets;
 
 /// This plugin should add all Scenario1 specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState> {
@@ -29,47 +29,119 @@ fn setup_scene(mut commands: Commands, assets: Res<GameAssets>) {
         })
         .insert(RigidBody::Dynamic)
         .insert(CollisionShape::Sphere { radius: 20.0 });
-    
+
+    // top
+    let width = 945.0;
+    let height = 25.0;
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(Vec2::new(500.0, 10.0)),
+                custom_size: Some(Vec2::new(width, height)),
                 color: Color::rgb(0.9, 0.9, 0.9),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(100.0, 300.0, 0.0),
+            transform: Transform::from_xyz(-25.5, 355.0, 0.0),
             ..Default::default()
         })
         .insert(RigidBody::Static)
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(250.0, 5.0, 0.1),
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
         });
+    // bot
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(Vec2::new(500.0, 10.0)),
+                custom_size: Some(Vec2::new(width, height)),
                 color: Color::rgb(0.9, 0.9, 0.9),
                 ..Default::default()
             },
-            transform: Transform::from_xyz(100.0, -300.0, 0.0),
+            transform: Transform::from_xyz(-25.5, -85.0, 0.0),
             ..Default::default()
         })
         .insert(RigidBody::Static)
         .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(250.0, 5.0, 0.1),
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
+            border_radius: None,
+        });
+    // letf top
+    let width = 20.0;
+    let height = 130.0;
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(width, height)),
+                color: Color::rgb(0.9, 0.9, 0.9),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(-488.0, 280.0, 0.0),
+            ..Default::default()
+        })
+        .insert(RigidBody::Static)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
+            border_radius: None,
+        });
+    // letf bot
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(width, height)),
+                color: Color::rgb(0.9, 0.9, 0.9),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(-488.0, -7.5, 0.0),
+            ..Default::default()
+        })
+        .insert(RigidBody::Static)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
+            border_radius: None,
+        });
+    // right top
+    let width = 20.0;
+    let height = 130.0;
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(width, height)),
+                color: Color::rgb(0.9, 0.9, 0.9),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(437.0, 280.0, 0.0),
+            ..Default::default()
+        })
+        .insert(RigidBody::Static)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
+            border_radius: None,
+        });
+    // right bot
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(width, height)),
+                color: Color::rgb(0.9, 0.9, 0.9),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(437.0, -7.5, 0.0),
+            ..Default::default()
+        })
+        .insert(RigidBody::Static)
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
             border_radius: None,
         });
 
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(1920.0, 1080.0)),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, -1.0),
-            global_transform: Default::default(),
-            texture: assets.map_prototype.clone(),
-            visibility: Default::default()
-        });
+    // background
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(1920.0, 1080.0)),
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(0.0, 0.0, -1.0),
+        global_transform: Default::default(),
+        texture: assets.map_prototype.clone(),
+        visibility: Default::default(),
+    });
 }
