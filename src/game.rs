@@ -13,6 +13,7 @@ use crate::game::crosshair::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*; 
+use crate::game::inventory::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
