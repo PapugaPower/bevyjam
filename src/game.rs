@@ -1,3 +1,4 @@
+mod audio2d;
 mod crosshair;
 mod main_camera;
 mod player;
@@ -9,6 +10,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 use iyes_bevy_util::*;
 
+use crate::game::audio2d::*; 
 use crate::game::crosshair::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
@@ -73,6 +75,10 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(process_interaction_timeouts)
                 .with_system(process_interactable_despawn)
                 .with_system(process_world_medkit_use)
+				// spatial sound
+                .with_system(spatial_audio)
+                .with_system(spatial_audio_changed)
+                .with_system(spatial_audio_added)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())

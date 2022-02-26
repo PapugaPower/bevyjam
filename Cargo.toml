@@ -38,7 +38,7 @@ features = [
 [dependencies.bevy_kira_audio]
 git = "https://github.com/PapugaPower/bevy_kira_audio"
 default-features = false
-features = ["flac"]
+features = ["flac", "wav"]
 
 [dependencies.bevy_tweening]
 git = "https://github.com/PapugaPower/bevy_tweening"
