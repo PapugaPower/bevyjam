@@ -51,6 +51,7 @@ fn main() {
     app.add_plugin(bevy_tweening::TweeningPlugin);
     app.add_plugin(benimator::AnimationPlugin::default());
     app.add_plugin(bevy_kira_audio::AudioPlugin);
+    app.add_plugin(heron::PhysicsPlugin::default());
 
     // assets loader
     AssetLoader::new(AppState::MainAssetLoading)
