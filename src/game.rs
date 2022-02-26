@@ -1,16 +1,20 @@
 mod crosshair;
 mod main_camera;
+mod player;
 
 use bevy::prelude::*;
 use iyes_bevy_util::BevyState;
 
 use crate::game::crosshair::*;
 use crate::game::main_camera::*;
+use crate::game::player::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
+
+
 pub use dev::DevPlaygroundPlugin;
 
 /// This plugin should add all common game systems used in all levels
@@ -25,6 +29,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_enter(self.state.clone())
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
+                .with_system(init_player)
         )
             .add_system_set(
                 SystemSet::on_update(self.state.clone())
@@ -34,6 +39,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             .add_system_set(
                 SystemSet::on_exit(self.state.clone())
                     .with_system(tear_down_crosshair)
+                    .with_system(tear_down_player)
             );
     }
 }
