@@ -5,7 +5,7 @@ use iyes_bevy_util::BevyState;
 
 #[derive(Component)]
 pub struct Crosshair {
-    mouse_pos: Vec3,
+    pub mouse_pos: Vec3,
 }
 
 pub fn setup_crosshair(mut commands: Commands) {
