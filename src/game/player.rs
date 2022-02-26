@@ -27,18 +27,6 @@ pub fn init_player(mut commands: Commands) {
             num_bullets_per_shot: 5,
         })
         .insert(LastShootTime { time: 0.0 });
-    
-    // Spawn a rectangle gizmo for movement reference
-    let mut reference_tform = Transform::from_scale(Vec3::new(128.0, 32.0, 1.0));
-    reference_tform.translation = Vec3::new(50.0, 50.0, 1.0);
-    commands.spawn_bundle(SpriteBundle {
-        transform: reference_tform,
-        sprite: Sprite {
-            color: Color::rgb(0.1, 0.1, 0.1),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
 }
 
 pub fn tear_down_player(mut commands: Commands, q: Query<Entity, With<Player>>) {

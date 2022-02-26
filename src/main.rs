@@ -59,6 +59,7 @@ fn main() {
         .with_asset_collection_file("meta/ui.assets")
         .with_asset_collection_file("meta/game.assets")
         .with_collection::<UiAssets>()
+        .with_collection::<GameAssets>()
         .build(&mut app);
 
     // our game stuff
@@ -91,4 +92,10 @@ struct UiAssets {
     font_menu_bold: Handle<Font>,
     #[asset(key = "ui.font_menu_regular")]
     font_menu_regular: Handle<Font>,
+}
+
+#[derive(AssetCollection)]
+struct GameAssets {
+    #[asset(key = "enviro.map_prototype")]
+    map_prototype: Handle<Image>,
 }
