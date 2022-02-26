@@ -68,6 +68,9 @@ fn main() {
         app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });
     }
 
+    app.add_plugin(game::DevPlaygroundPlugin { state: AppState::InGame(GameMode::DevPlayground) });
+    app.add_plugin(game::Scenario1Plugin { state: AppState::InGame(GameMode::Scenario1) });
+
     // debug systems; uncomment if needed
     //app.add_system(debug_state);
 
