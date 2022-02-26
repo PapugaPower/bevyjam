@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 bevy_loading = { git = "https://github.com/IyesGames/bevy_loading" }
 iyes_bevy_util = { git = "https://github.com/IyesGames/iyes_bevy_util" }
+enum-iterator = "0.7.0"
 
 [dependencies.bevy]
 version = "0.6.1"

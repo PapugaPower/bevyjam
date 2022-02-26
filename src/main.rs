@@ -1,9 +1,14 @@
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 
+use enum_iterator::IntoEnumIterator;
+
+mod ui;
+
 /// Each level/map in the game
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum GameMode {
+#[derive(IntoEnumIterator)]
+pub enum GameMode {
     Scenario1,
     DevPlayground,
 }
@@ -13,7 +18,6 @@ enum GameMode {
 enum AppState {
     MainAssetLoading,
     MainMenu,
-    Loading(GameMode),
     InGame(GameMode),
     GameOverWin,
     GameOverLose,
@@ -51,13 +55,25 @@ fn main() {
     AssetLoader::new(AppState::MainAssetLoading)
         .continue_to_state(AppState::MainMenu)
         .with_asset_collection_file("meta/ui.assets")
+        .with_asset_collection_file("meta/game.assets")
         .with_collection::<UiAssets>()
         .build(&mut app);
 
     // our game stuff
-    //app.add_plugin(ui::mainmenu::MainMenuPlugin(AppState::MainMenu));
+    app.add_plugin(ui::UiSetupPlugin);
+    app.add_plugin(ui::mainmenu::MainMenuPlugin);
+
+    // debug systems; uncomment if needed
+    //app.add_system(debug_state);
 
     app.run();
+}
+
+#[allow(dead_code)]
+fn debug_state(
+    state: Res<State<AppState>>,
+) {
+    debug!("Current AppState: {:?}", state.current());
 }
 
 #[derive(AssetCollection)]
