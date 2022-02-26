@@ -7,6 +7,12 @@ use iyes_bevy_util::BevyState;
 use crate::game::crosshair::*;
 use crate::game::main_camera::*;
 
+pub mod sc1;
+pub use sc1::Scenario1Plugin;
+
+pub mod dev;
+pub use dev::DevPlaygroundPlugin;
+
 /// This plugin should add all common game systems used in all levels
 pub struct GamePlugin<S: BevyState> {
     pub state: S,
