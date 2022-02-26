@@ -1,7 +1,7 @@
 use crate::game::crosshair::Crosshair;
 use crate::game::player::Player;
 use bevy::prelude::*;
-use heron::prelude::*;
+use heron::rapier_plugin::PhysicsWorld;
 
 #[derive(Component)]
 pub struct LastShootTime {
@@ -22,15 +22,8 @@ pub struct Weapon {
 #[derive(Component)]
 pub struct Bullet {
     life_time: Timer,
-}
-
-// Physical layers of the game
-#[derive(PhysicsLayer)]
-pub enum Layer {
-    World,
-    Player,
-    Enemies,
-    Bullets,
+    direction: Vec3,
+    speed: f32,
 }
 
 pub fn player_shoot(
@@ -49,12 +42,9 @@ pub fn player_shoot(
         if last_shoot.time + weapon.fire_rate <= now {
             let spread_step = weapon.spread / (weapon.num_bullets_per_shot - 1) as f32;
             for i in 0..weapon.num_bullets_per_shot {
-
                 let bullet_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
                     * Quat::from_rotation_z((-weapon.spread / 2.0).to_radians())
                     * shoot_dir;
-                let bullet_vel = bullet_dir * weapon.bullet_speed;
-
                 commands
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
@@ -66,33 +56,50 @@ pub fn player_shoot(
                         ..Default::default()
                     })
                     .insert(Bullet {
-                        life_time: Timer::from_seconds(1.0, false),
-                    })
-                    .insert(RigidBody::Dynamic)
-                    .insert(CollisionShape::Sphere { radius: 0.1 })
-                    .insert(Velocity::from_linear(bullet_vel))
-                    .insert(PhysicMaterial {
-                        friction: 1.0,
-                        density: 10.0,
-                        ..Default::default()
-                    })
-                    .insert(
-                        CollisionLayers::none()
-                            .with_group(Layer::Bullets)
-                            .with_mask(Layer::World),
-                    );
+                        life_time: Timer::from_seconds(5.0, false),
+                        direction: bullet_dir,
+                        speed: weapon.bullet_speed,
+                    });
             }
             last_shoot.time = now;
         }
     }
 }
 
+pub fn bullets_collision(
+    mut commands: Commands,
+    time: Res<Time>,
+    physics_world: PhysicsWorld,
+    mut query_bullets: Query<(Entity, &mut Transform, &Bullet)>,
+) {
+    for (entity, mut transform, bullet) in query_bullets.iter_mut() {
+        let ray_cast = physics_world.ray_cast(transform.translation, bullet.direction, true);
+        let bullet_travel = bullet.speed * time.delta_seconds();
+        if let Some(collision) = ray_cast {
+            if (collision.collision_point - transform.translation).length() <= bullet_travel {
+                commands.entity(entity).despawn();
+            }
+            // debug collision point
+            // commands.spawn_bundle(SpriteBundle {
+            //     sprite: Sprite {
+            //         color: Color::GREEN,
+            //         custom_size: Some(Vec2::new(10., 10.)),
+            //         ..Default::default()
+            //     },
+            //     transform: Transform::from_translation(collision.collision_point),
+            //     ..Default::default()
+            // });
+        }
+        transform.translation += bullet.direction * bullet_travel;
+    }
+}
+
 pub fn bullets_despawn(
     mut commands: Commands,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut Bullet)>,
+    mut query_bullets: Query<(Entity, &mut Bullet)>,
 ) {
-    for (entity, mut bullet) in query.iter_mut() {
+    for (entity, mut bullet) in query_bullets.iter_mut() {
         bullet.life_time.tick(time.delta());
         if bullet.life_time.finished() {
             commands.entity(entity).despawn();

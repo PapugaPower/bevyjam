@@ -42,6 +42,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                     .with_system(transfer_input_to_player_system)
                     .with_system(player_shoot)
                     .with_system(bullets_despawn)
+                    .with_system(bullets_collision)
             )
             .add_system_set(
                 SystemSet::on_exit(self.state.clone())
