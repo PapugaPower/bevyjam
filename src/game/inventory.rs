@@ -4,50 +4,39 @@ use std::any::Any;
 /// Collection of items. Can be used on a player, chest ...
 #[derive(Component, Default)]
 pub struct Inventory {
-    items: Vec<InventoryItem>,
+    items: Vec<Box<dyn InventoryItem>>,
 }
 
 impl Inventory {
     /// Insert a single item.
-    pub fn insert(&mut self, item: InventoryItem) {
+    pub fn insert(&mut self, item: Box<dyn InventoryItem>) {
         self.items.push(item);
     }
 }
 
 /// Trait that must be implemented by all inventory items.
-pub trait IsInventoryItem: Any + Send + Sync {}
-
-/// Single item in inventory.
-pub struct InventoryItem {
-    // TODO what do we actually need in here?
-    pub name: String,
-    pub item: Box<dyn IsInventoryItem>,
-}
-
-impl InventoryItem {
-    /// Create a new inventory item.
-    pub fn new(name: impl Into<String>, item: impl IsInventoryItem) -> Self {
-        Self {
-            item: Box::new(item),
-            name: name.into(),
-        }
-    }
+pub trait InventoryItem: Any + Send + Sync {
+	/// The name of the item.
+	fn name(&self) -> &str;
 }
 
 /// Component that can hold a single item. This uses an Option so we can move items with
 /// [`Option::Take`].
 #[derive(Component)]
 pub struct InventoryItemHolder {
-    pub item: Option<InventoryItem>,
+    pub item: Option<Box<dyn InventoryItem>>,
     /// Whether to despawn the entity if the item is picked up.
     pub despawn_on_pickup: bool,
 }
 
-impl InventoryItemHolder {
+impl<T> From<T> for InventoryItemHolder
+where
+	T: InventoryItem,
+{
     /// Create new holder.
-    pub fn new(item: InventoryItem) -> Self {
+    fn from(item: T) -> Self {
         Self {
-            item: Some(item),
+            item: Some(Box::new(item)),
             despawn_on_pickup: true,
         }
     }

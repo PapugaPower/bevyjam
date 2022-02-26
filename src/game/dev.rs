@@ -171,7 +171,11 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
 
     // inventory items
     struct GreenBoxThing;
-    impl IsInventoryItem for GreenBoxThing {}
+    impl InventoryItem for GreenBoxThing {
+		fn name(&self) -> &str {
+			"green box"
+		}
+	}
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -182,8 +186,5 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             transform: Transform::from_xyz(100.0, 20.0, 0.05),
             ..Default::default()
         })
-        .insert(InventoryItemHolder::new(InventoryItem::new(
-            "green box",
-            GreenBoxThing,
-        )));
+        .insert(InventoryItemHolder::from(GreenBoxThing));
 }
