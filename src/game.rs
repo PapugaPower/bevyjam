@@ -1,5 +1,6 @@
 mod crosshair;
 mod main_camera;
+mod inventory;
 mod player;
 mod shooting;
 
@@ -12,6 +13,7 @@ use crate::game::crosshair::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*; 
+use crate::game::inventory::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
@@ -43,6 +45,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(player_shoot)
                 .with_system(bullets_despawn)
                 .with_system(bullets_collision)
+                .with_system(inventory::pickup_items)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
