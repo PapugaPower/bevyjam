@@ -1,6 +1,7 @@
 mod crosshair;
 mod main_camera;
 mod player;
+mod shooting;
 
 use bevy::prelude::*;
 use iyes_bevy_util::BevyState;
@@ -8,6 +9,7 @@ use iyes_bevy_util::BevyState;
 use crate::game::crosshair::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
+use crate::game::shooting::*; 
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
@@ -35,11 +37,14 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 SystemSet::on_update(self.state.clone())
                     .with_system(crosshair_positon_update_system)
                     .with_system(mouse_pos_to_wspace_system)
+                    .with_system(player_shoot)
+                    .with_system(bullets_despawn)
             )
             .add_system_set(
                 SystemSet::on_exit(self.state.clone())
                     .with_system(tear_down_crosshair)
                     .with_system(tear_down_player)
+                    .with_system(tear_down_bullets)
             );
     }
 }
