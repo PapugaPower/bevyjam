@@ -38,7 +38,7 @@ pub struct Weapon {
     // in degrees
     pub spread: f32,
     // bullets will be spread equally over `spread`
-    pub num_bullets_per_shot: u32,
+    pub projectiles_per_shot: u32,
     // how far projectiles should spawn from player
     pub projectile_spawn_offset: f32,
     // for now used to define radius for Throwable and Static
@@ -93,14 +93,14 @@ pub fn player_shoot(
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
             // if only one bullet we don't care about spread
-            let spread_step = if weapon.num_bullets_per_shot <= 1 {
-                0.0
+            let (spread_edge, spread_step) = if weapon.projectiles_per_shot <= 1 {
+                (0.0, 0.0) 
             } else {
-                weapon.spread / (weapon.num_bullets_per_shot - 1) as f32
+                (-weapon.spread / 2.0, weapon.spread / (weapon.projectiles_per_shot - 1) as f32)
             };
-            for i in 0..weapon.num_bullets_per_shot {
+            for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
-                    * Quat::from_rotation_z((-weapon.spread / 2.0).to_radians())
+                    * Quat::from_rotation_z(spread_edge.to_radians())
                     * shoot_dir;
                 match weapon.ammo_type {
                     AmmoType::Projectile => {
@@ -274,7 +274,9 @@ pub fn pulsation_controller(
         pulsating.pulse_time.tick(time.delta());
         if pulsating.pulse_time.finished() {
             physics_world.intersections_with_shape(
-                &CollisionShape::Sphere { radius: pulsating.radius },
+                &CollisionShape::Sphere {
+                    radius: pulsating.radius,
+                },
                 transform.translation,
                 transform.rotation,
                 CollisionLayers::all::<PhysLayer>(),
