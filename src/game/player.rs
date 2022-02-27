@@ -1,9 +1,7 @@
-use crate::game::shooting::{LastShootTime, Weapon};
+use crate::game::shooting::{LastShootTime, Weapon, AmmoType};
 use bevy::prelude::*;
-use bevy::render::view::Layer;
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
-use heron::rapier_plugin::rapier2d::geometry::ColliderShape;
 use crate::game::crosshair::Crosshair;
 use crate::game::phys_layers::PhysLayer;
 
@@ -15,7 +13,7 @@ pub struct Player {
 pub fn init_player(mut commands: Commands) {
     let player_tform = Transform::from_scale(Vec3::new(48.0, 48.0, 1.0));
 
-    let x = commands
+    let _x = commands
         .spawn_bundle(SpriteBundle {
             transform: player_tform,
             sprite: Sprite {
@@ -26,10 +24,13 @@ pub fn init_player(mut commands: Commands) {
         })
         .insert(Player {})
         .insert(Weapon {
+            ammo_type: AmmoType::Projectile,
             fire_rate: 1.0 / 5.0,
-            bullet_speed: 1000.0,
-            spread: 90.0,
-            num_bullets_per_shot: 5,
+            projectile_speed: 500.0,
+            projectile_life_time: 2.0,
+            spread: 10.0,
+            num_bullets_per_shot: 3,
+            projectile_spawn_offset: 50.0,
         })
         .insert(LastShootTime { time: 0.0 })
         .insert(RigidBody::KinematicPositionBased)
@@ -50,7 +51,7 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
     let mut mouse_pos_level = xhair.mouse_pos;
     mouse_pos_level.z = 0.0;
     
-    let mut direction = mouse_pos_level - player_tform.translation;
+    let direction = mouse_pos_level - player_tform.translation;
     let angle = direction.y.atan2(direction.x);
     player_tform.rotation = Quat::from_axis_angle(Vec3::Z, angle);
     
@@ -78,12 +79,12 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
     // if the geometry is too restrictive.
     for iter in 0..4{
         let hit = physics_world.shape_cast_with_filter(
-            &player_col,
+            player_col,
             player_tform.translation,
             player_tform.rotation,
             final_movement_vector * 1.1,
             CollisionLayers::none().with_group(PhysLayer::Player).with_mask(PhysLayer::World),
-            |entitity| true);
+            |_entitity| true);
 
         if let Some(collision) = hit {
             if let ShapeCastCollisionType::Collided(info) = collision.collision_type{
@@ -100,5 +101,5 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
         }
     }
     
-    player_tform.translation = player_tform.translation + final_movement_vector;
+    player_tform.translation += final_movement_vector;
 }
