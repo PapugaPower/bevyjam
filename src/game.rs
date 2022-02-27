@@ -44,8 +44,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(refresh_camera_position_system)
                 .with_system(transfer_input_to_player_system)
                 .with_system(player_shoot)
-                .with_system(bullets_despawn)
-                .with_system(bullets_collision)
+                .with_system(ammo_despawn)
+                .with_system(projectiles_collision)
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
         );
@@ -53,7 +53,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_exit(self.state.clone())
                 .with_system(despawn_with::<Crosshair>)
                 .with_system(despawn_with::<Player>)
-                .with_system(despawn_with::<Bullet>)
+                .with_system(despawn_with::<Ammo>)
                 .with_system(remove_resource::<GameTimer>)
         );
     }
