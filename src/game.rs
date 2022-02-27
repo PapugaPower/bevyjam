@@ -23,6 +23,7 @@ pub mod dev;
 mod phys_layers;
 mod hurt_zones;
 mod player_triggers;
+mod world_interaction;
 
 pub use dev::DevPlaygroundPlugin;
 
