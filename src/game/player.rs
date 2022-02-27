@@ -10,6 +10,12 @@ pub struct Player {
     // to be expanded
 }
 
+#[derive(Component)]
+pub struct PlayerHealth {
+    pub max: f32,
+    pub current: f32
+}
+
 pub fn init_player(mut commands: Commands) {
     let player_tform = Transform::from_scale(Vec3::new(48.0, 48.0, 1.0));
 
@@ -23,6 +29,7 @@ pub fn init_player(mut commands: Commands) {
             ..Default::default()
         })
         .insert(Player {})
+        .insert(PlayerHealth { current: 1000., max: 1000.})
         .insert(Weapon {
             ammo_type: AmmoType::Projectile,
             fire_rate: 1.0 / 5.0,
