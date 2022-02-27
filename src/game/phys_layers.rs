@@ -5,5 +5,6 @@ pub enum PhysLayer{
     Player,
     World,
     Bullets,
-    Enemies
+    Enemies,
+    PlayerTriggers
 }

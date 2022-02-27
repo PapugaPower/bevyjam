@@ -13,12 +13,16 @@ use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
+use crate::game::hurt_zones::*;
+use crate::game::player_triggers::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
 mod phys_layers;
+mod hurt_zones;
+mod player_triggers;
 
 pub use dev::DevPlaygroundPlugin;
 
@@ -36,7 +40,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(setup_crosshair)
                 .with_system(init_player)
         );
-        app.add_system_set(
+        let x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
                 .with_system(crosshair_positon_update_system)
                 .with_system(mouse_pos_to_wspace_system)
@@ -49,6 +53,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(static_controller)
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
+                .with_system(evaluate_player_detection_triggers_system)
+                .with_system(evaluate_hurt_zones)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
