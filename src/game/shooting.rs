@@ -4,6 +4,12 @@ use crate::game::player::Player;
 use bevy::prelude::*;
 use heron::{prelude::*, rapier_plugin::PhysicsWorld};
 
+#[derive(Debug, Clone, Copy)]
+pub struct DamageEvent {
+    pub entity: Entity,
+    pub damage: f32,
+}
+
 #[derive(Component)]
 pub struct LastShootTime {
     pub time: f32,
@@ -22,6 +28,7 @@ pub enum AmmoType {
 #[derive(Component)]
 pub struct Weapon {
     pub ammo_type: AmmoType,
+    pub damage: f32,
     // this is 1 / real_fire_rate
     pub fire_rate: f32,
     // speed of projectile or pulse rate of static
@@ -34,10 +41,14 @@ pub struct Weapon {
     pub num_bullets_per_shot: u32,
     // how far projectiles should spawn from player
     pub projectile_spawn_offset: f32,
+    // for now used to define radius for Throwable and Static
+    // does nothing for Projectile
+    pub radius_of_effect: f32,
 }
 
 #[derive(Component)]
 pub struct Projectile {
+    damage: f32,
     life_time: Timer,
     direction: Vec3,
     speed: f32,
@@ -45,11 +56,15 @@ pub struct Projectile {
 
 #[derive(Component)]
 pub struct Throwable {
+    damage: f32,
+    radius: f32,
     life_time: Timer,
 }
 
 #[derive(Component)]
 pub struct Static {
+    damage: f32,
+    radius: f32,
     life_time: Timer,
     pulse_time: Timer,
 }
@@ -74,7 +89,12 @@ pub fn player_shoot(
 
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
-            let spread_step = weapon.spread / (weapon.num_bullets_per_shot - 1) as f32;
+            // if only one bullet we don't care about spread
+            let spread_step = if weapon.num_bullets_per_shot <= 1 {
+                0.0
+            } else {
+                weapon.spread / (weapon.num_bullets_per_shot - 1) as f32
+            };
             for i in 0..weapon.num_bullets_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
                     * Quat::from_rotation_z((-weapon.spread / 2.0).to_radians())
@@ -92,6 +112,7 @@ pub fn player_shoot(
                                 ..Default::default()
                             })
                             .insert(Projectile {
+                                damage: weapon.damage,
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                                 direction: shoot_dir,
                                 speed: weapon.projectile_speed,
@@ -110,6 +131,8 @@ pub fn player_shoot(
                                 ..Default::default()
                             })
                             .insert(Throwable {
+                                damage: weapon.damage,
+                                radius: weapon.radius_of_effect,
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
                             .insert(RigidBody::Dynamic)
@@ -138,6 +161,8 @@ pub fn player_shoot(
                                 ..Default::default()
                             })
                             .insert(Static {
+                                damage: weapon.damage,
+                                radius: weapon.radius_of_effect,
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                                 pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
                             })
@@ -159,6 +184,7 @@ pub fn player_shoot(
 pub fn projectiles_controller(
     mut commands: Commands,
     time: Res<Time>,
+    mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
     query_player: Query<Entity, With<Player>>,
     mut query_projectiles: Query<(Entity, &mut Transform, &mut Projectile)>,
@@ -180,6 +206,10 @@ pub fn projectiles_controller(
             if collision.entity == player_entity {
             } else if (collision.collision_point - transform.translation).length() <= bullet_travel
             {
+                damage_event.send(DamageEvent {
+                    entity: collision.entity,
+                    damage: projectile.damage,
+                });
                 commands.entity(entity).despawn();
             }
             // debug collision point
@@ -200,6 +230,7 @@ pub fn projectiles_controller(
 pub fn throwable_controller(
     mut commands: Commands,
     time: Res<Time>,
+    mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
     mut query_throwable: Query<(Entity, &Transform, &mut Throwable)>,
 ) {
@@ -209,12 +240,15 @@ pub fn throwable_controller(
         if throwable.life_time.finished() {
             // collision check
             physics_world.intersections_with_shape(
-                &CollisionShape::Sphere { radius: 0.25 },
+                &CollisionShape::Sphere { radius: throwable.radius },
                 transform.translation,
                 transform.rotation,
                 CollisionLayers::all::<PhysLayer>(),
-                &|e| {
-                    println!("throwable collision with {:?}", e);
+                &mut |e| {
+                    damage_event.send(DamageEvent {
+                        entity: e,
+                        damage: throwable.damage,
+                    });
                     true
                 },
             );
@@ -226,6 +260,7 @@ pub fn throwable_controller(
 pub fn static_controller(
     mut commands: Commands,
     time: Res<Time>,
+    mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
     mut query_static: Query<(Entity, &Transform, &mut Static)>,
 ) {
@@ -234,12 +269,15 @@ pub fn static_controller(
         s.pulse_time.tick(time.delta());
         if s.pulse_time.finished() {
             physics_world.intersections_with_shape(
-                &CollisionShape::Sphere { radius: 0.25 },
+                &CollisionShape::Sphere { radius: s.radius },
                 transform.translation,
                 transform.rotation,
                 CollisionLayers::all::<PhysLayer>(),
-                &|e| {
-                    println!("static collision with {:?}", e);
+                &mut |e| {
+                    damage_event.send(DamageEvent {
+                        entity: e,
+                        damage: s.damage,
+                    });
                     true
                 },
             );

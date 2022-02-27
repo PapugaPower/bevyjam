@@ -33,12 +33,14 @@ pub fn init_player(mut commands: Commands) {
         .insert(PlayerHealth { current: 200., max: 200.})
         .insert(Weapon {
             ammo_type: AmmoType::Static,
-            fire_rate: 1.0 / 2.0,
-            projectile_speed: 0.5,
+            damage: 69.0,
+            fire_rate: 1.0 / 5.0,
+            projectile_speed: 1.0,
             projectile_life_time: 2.0,
-            spread: 10.0,
-            num_bullets_per_shot: 1,
+            spread: 30.0,
+            num_bullets_per_shot: 3,
             projectile_spawn_offset: 50.0,
+            radius_of_effect: 10.0,
         })
         .insert(LastShootTime { time: 0.0 })
         .insert(RigidBody::KinematicPositionBased)

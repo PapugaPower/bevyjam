@@ -33,6 +33,8 @@ pub struct GamePlugin<S: BevyState> {
 
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
+        // add event types
+        app.add_event::<DamageEvent>();
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state.clone())
@@ -40,7 +42,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(setup_crosshair)
                 .with_system(init_player)
         );
-        let x = app.add_system_set(
+        let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
                 .with_system(crosshair_positon_update_system)
                 .with_system(mouse_pos_to_wspace_system)
