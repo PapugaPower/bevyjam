@@ -16,23 +16,15 @@ pub enum AmmoType {
     // granades, molotov
     Throwable,
     // flamethrower
-    Periodic,
+    Static,
 }
-
-#[derive(Component)]
-pub struct Projectile;
-
-#[derive(Component)]
-pub struct Throwable;
-
-#[derive(Component)]
-pub struct Periodic;
 
 #[derive(Component)]
 pub struct Weapon {
     pub ammo_type: AmmoType,
     // this is 1 / real_fire_rate
     pub fire_rate: f32,
+    // speed of projectile or pulse rate of static
     pub projectile_speed: f32,
     // in seconds
     pub projectile_life_time: f32,
@@ -45,10 +37,21 @@ pub struct Weapon {
 }
 
 #[derive(Component)]
-pub struct Ammo {
+pub struct Projectile {
     life_time: Timer,
     direction: Vec3,
     speed: f32,
+}
+
+#[derive(Component)]
+pub struct Throwable {
+    life_time: Timer,
+}
+
+#[derive(Component)]
+pub struct Static {
+    life_time: Timer,
+    pulse_time: Timer,
 }
 
 pub fn player_shoot(
@@ -58,6 +61,7 @@ pub fn player_shoot(
     mut query_player: Query<(&Transform, &Weapon, &mut LastShootTime), With<Player>>,
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
+    // TODO handle input
     if keys.pressed(KeyCode::Space) {
         let (player_transform, weapon, mut last_shoot) = query_player.single_mut();
         let cross_transform = query_cross.single_mut();
@@ -72,7 +76,7 @@ pub fn player_shoot(
         if last_shoot.time + weapon.fire_rate <= now {
             let spread_step = weapon.spread / (weapon.num_bullets_per_shot - 1) as f32;
             for i in 0..weapon.num_bullets_per_shot {
-                let bullet_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
+                let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
                     * Quat::from_rotation_z((-weapon.spread / 2.0).to_radians())
                     * shoot_dir;
                 match weapon.ammo_type {
@@ -87,14 +91,14 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
-                            .insert(Ammo {
+                            .insert(Projectile {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
-                                direction: bullet_dir,
+                                direction: shoot_dir,
                                 speed: weapon.projectile_speed,
                             });
                     }
                     AmmoType::Throwable => {
-                        let bullet_vel = bullet_dir * weapon.projectile_speed;
+                        let throw_dir = shoot_dir * weapon.projectile_speed;
                         commands
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
@@ -105,14 +109,12 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
-                            .insert(Ammo {
+                            .insert(Throwable {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
-                                direction: bullet_dir,
-                                speed: weapon.projectile_speed,
                             })
                             .insert(RigidBody::Dynamic)
                             .insert(CollisionShape::Sphere { radius: 0.2 })
-                            .insert(Velocity::from_linear(bullet_vel))
+                            .insert(Velocity::from_linear(throw_dir))
                             .insert(PhysicMaterial {
                                 friction: 1.0,
                                 density: 10.0,
@@ -124,7 +126,7 @@ pub fn player_shoot(
                                     .with_masks(&[PhysLayer::World, PhysLayer::Enemies]),
                             );
                     }
-                    AmmoType::Periodic => {
+                    AmmoType::Static => {
                         commands
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
@@ -135,10 +137,9 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
-                            .insert(Ammo {
+                            .insert(Static {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
-                                direction: bullet_dir,
-                                speed: weapon.projectile_speed,
+                                pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
                             })
                             .insert(RigidBody::Sensor)
                             .insert(CollisionShape::Sphere { radius: 0.25 })
@@ -155,17 +156,24 @@ pub fn player_shoot(
     }
 }
 
-pub fn projectiles_collision(
+pub fn projectiles_controller(
     mut commands: Commands,
     time: Res<Time>,
     physics_world: PhysicsWorld,
     query_player: Query<Entity, With<Player>>,
-    mut query_bullets: Query<(Entity, &mut Transform, &Ammo), Without<CollisionShape>>,
+    mut query_projectiles: Query<(Entity, &mut Transform, &mut Projectile)>,
 ) {
     let player_entity = query_player.single();
-    for (entity, mut transform, bullet) in query_bullets.iter_mut() {
-        let ray_cast = physics_world.ray_cast(transform.translation, bullet.direction, true);
-        let bullet_travel = bullet.speed * time.delta_seconds();
+    for (entity, mut transform, mut projectile) in query_projectiles.iter_mut() {
+        // life time check
+        projectile.life_time.tick(time.delta());
+        if projectile.life_time.finished() {
+            commands.entity(entity).despawn();
+            continue;
+        }
+        // collision check
+        let ray_cast = physics_world.ray_cast(transform.translation, projectile.direction, true);
+        let bullet_travel = projectile.speed * time.delta_seconds();
         if let Some(collision) = ray_cast {
             // we need to manually check for collision with different entities
             // TODO refactor maybe
@@ -185,19 +193,62 @@ pub fn projectiles_collision(
             //     ..Default::default()
             // });
         }
-        transform.translation += bullet.direction * bullet_travel;
+        transform.translation += projectile.direction * bullet_travel;
     }
 }
 
-pub fn ammo_despawn(
+pub fn throwable_controller(
     mut commands: Commands,
     time: Res<Time>,
-    mut query_projectiles: Query<(Entity, &mut Ammo)>,
+    physics_world: PhysicsWorld,
+    mut query_throwable: Query<(Entity, &Transform, &mut Throwable)>,
 ) {
-    for (entity, mut ammo) in query_projectiles.iter_mut() {
-        ammo.life_time.tick(time.delta());
-        if ammo.life_time.finished() {
+    for (entity, transform, mut throwable) in query_throwable.iter_mut() {
+        // life time check
+        throwable.life_time.tick(time.delta());
+        if throwable.life_time.finished() {
+            // collision check
+            physics_world.intersections_with_shape(
+                &CollisionShape::Sphere { radius: 0.25 },
+                transform.translation,
+                transform.rotation,
+                CollisionLayers::all::<PhysLayer>(),
+                &|e| {
+                    println!("throwable collision with {:?}", e);
+                    true
+                },
+            );
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+pub fn static_controller(
+    mut commands: Commands,
+    time: Res<Time>,
+    physics_world: PhysicsWorld,
+    mut query_static: Query<(Entity, &Transform, &mut Static)>,
+) {
+    for (entity, transform, mut s) in query_static.iter_mut() {
+        // collision check
+        s.pulse_time.tick(time.delta());
+        if s.pulse_time.finished() {
+            physics_world.intersections_with_shape(
+                &CollisionShape::Sphere { radius: 0.25 },
+                transform.translation,
+                transform.rotation,
+                CollisionLayers::all::<PhysLayer>(),
+                &|e| {
+                    println!("static collision with {:?}", e);
+                    true
+                },
+            );
+        }
+        // life time check
+        s.life_time.tick(time.delta());
+        if s.life_time.finished() {
+            commands.entity(entity).despawn();
+            continue;
         }
     }
 }

@@ -31,12 +31,12 @@ pub fn init_player(mut commands: Commands) {
         .insert(Player {})
         .insert(PlayerHealth { current: 1000., max: 1000.})
         .insert(Weapon {
-            ammo_type: AmmoType::Projectile,
-            fire_rate: 1.0 / 5.0,
-            projectile_speed: 500.0,
+            ammo_type: AmmoType::Static,
+            fire_rate: 1.0 / 2.0,
+            projectile_speed: 0.5,
             projectile_life_time: 2.0,
             spread: 10.0,
-            num_bullets_per_shot: 3,
+            num_bullets_per_shot: 1,
             projectile_spawn_offset: 50.0,
         })
         .insert(LastShootTime { time: 0.0 })
