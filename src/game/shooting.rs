@@ -17,11 +17,11 @@ pub struct LastShootTime {
 
 #[derive(Debug, Clone, Copy)]
 pub enum AmmoType {
-    // pistols, rifles, shotguns
+    // not physical objects
     Projectile,
-    // granades, molotov
+    // physics based
     Throwable,
-    // flamethrower
+    // just nonphysical static objects
     Static,
 }
 
@@ -47,26 +47,29 @@ pub struct Weapon {
 }
 
 #[derive(Component)]
+pub struct Armament {
+    life_time: Timer,
+}
+
+#[derive(Component)]
 pub struct Projectile {
     damage: f32,
-    life_time: Timer,
     direction: Vec3,
     speed: f32,
 }
 
 #[derive(Component)]
-pub struct Throwable {
+pub struct Explosive {
+    detonation_time: Timer,
     damage: f32,
     radius: f32,
-    life_time: Timer,
 }
 
 #[derive(Component)]
-pub struct Static {
+pub struct Pulsing {
+    pulse_time: Timer,
     damage: f32,
     radius: f32,
-    life_time: Timer,
-    pulse_time: Timer,
 }
 
 pub fn player_shoot(
@@ -111,9 +114,11 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
+                            .insert(Armament {
+                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
+                            })
                             .insert(Projectile {
                                 damage: weapon.damage,
-                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                                 direction: shoot_dir,
                                 speed: weapon.projectile_speed,
                             });
@@ -130,10 +135,16 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
-                            .insert(Throwable {
+                            .insert(Armament {
+                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
+                            })
+                            .insert(Explosive {
+                                detonation_time: Timer::from_seconds(
+                                    weapon.projectile_life_time,
+                                    false,
+                                ),
                                 damage: weapon.damage,
                                 radius: weapon.radius_of_effect,
-                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
                             .insert(RigidBody::Dynamic)
                             .insert(CollisionShape::Sphere { radius: 0.2 })
@@ -160,11 +171,13 @@ pub fn player_shoot(
                                 transform: spawn_transform,
                                 ..Default::default()
                             })
-                            .insert(Static {
+                            .insert(Armament {
+                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
+                            })
+                            .insert(Pulsing {
+                                pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
                                 damage: weapon.damage,
                                 radius: weapon.radius_of_effect,
-                                life_time: Timer::from_seconds(weapon.projectile_life_time, false),
-                                pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
                             })
                             .insert(RigidBody::Sensor)
                             .insert(CollisionShape::Sphere { radius: 0.25 })
@@ -187,17 +200,10 @@ pub fn projectiles_controller(
     mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
     query_player: Query<Entity, With<Player>>,
-    mut query_projectiles: Query<(Entity, &mut Transform, &mut Projectile)>,
+    mut query_projectiles: Query<(Entity, &Projectile, &mut Transform)>,
 ) {
     let player_entity = query_player.single();
-    for (entity, mut transform, mut projectile) in query_projectiles.iter_mut() {
-        // life time check
-        projectile.life_time.tick(time.delta());
-        if projectile.life_time.finished() {
-            commands.entity(entity).despawn();
-            continue;
-        }
-        // collision check
+    for (entity, projectile, mut transform) in query_projectiles.iter_mut() {
         let ray_cast = physics_world.ray_cast(transform.translation, projectile.direction, true);
         let bullet_travel = projectile.speed * time.delta_seconds();
         if let Some(collision) = ray_cast {
@@ -227,66 +233,79 @@ pub fn projectiles_controller(
     }
 }
 
-pub fn throwable_controller(
-    mut commands: Commands,
+pub fn explosions_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
-    mut query_throwable: Query<(Entity, &Transform, &mut Throwable)>,
+    mut query_explosives: Query<(&Transform, &mut Explosive)>,
 ) {
-    for (entity, transform, mut throwable) in query_throwable.iter_mut() {
+    for (transform, mut explosive) in query_explosives.iter_mut() {
         // life time check
-        throwable.life_time.tick(time.delta());
-        if throwable.life_time.finished() {
+        explosive.detonation_time.tick(time.delta());
+        if explosive.detonation_time.finished() {
             // collision check
             physics_world.intersections_with_shape(
-                &CollisionShape::Sphere { radius: throwable.radius },
+                &CollisionShape::Sphere {
+                    radius: explosive.radius,
+                },
                 transform.translation,
                 transform.rotation,
                 CollisionLayers::all::<PhysLayer>(),
                 &mut |e| {
                     damage_event.send(DamageEvent {
                         entity: e,
-                        damage: throwable.damage,
+                        damage: explosive.damage,
                     });
                     true
                 },
             );
-            commands.entity(entity).despawn();
         }
     }
 }
 
-pub fn static_controller(
-    mut commands: Commands,
+pub fn pulsation_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
     physics_world: PhysicsWorld,
-    mut query_static: Query<(Entity, &Transform, &mut Static)>,
+    mut query_pulsing: Query<(&Transform, &mut Pulsing)>,
 ) {
-    for (entity, transform, mut s) in query_static.iter_mut() {
+    for (transform, mut pulsating) in query_pulsing.iter_mut() {
         // collision check
-        s.pulse_time.tick(time.delta());
-        if s.pulse_time.finished() {
+        pulsating.pulse_time.tick(time.delta());
+        if pulsating.pulse_time.finished() {
             physics_world.intersections_with_shape(
-                &CollisionShape::Sphere { radius: s.radius },
+                &CollisionShape::Sphere { radius: pulsating.radius },
                 transform.translation,
                 transform.rotation,
                 CollisionLayers::all::<PhysLayer>(),
                 &mut |e| {
                     damage_event.send(DamageEvent {
                         entity: e,
-                        damage: s.damage,
+                        damage: pulsating.damage,
                     });
                     true
                 },
             );
         }
-        // life time check
-        s.life_time.tick(time.delta());
-        if s.life_time.finished() {
+    }
+}
+
+pub fn armaments_despawn(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query_armaments: Query<(Entity, &mut Armament)>,
+) {
+    for (entity, mut armament) in query_armaments.iter_mut() {
+        armament.life_time.tick(time.delta());
+        if armament.life_time.finished() {
             commands.entity(entity).despawn();
             continue;
         }
+    }
+}
+
+pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {
+    for e in events.iter() {
+        debug!("damage event: {:?}", e);
     }
 }

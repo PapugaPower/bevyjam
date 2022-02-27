@@ -44,15 +44,23 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         );
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
+                // player movement
                 .with_system(crosshair_positon_update_system)
                 .with_system(mouse_pos_to_wspace_system)
                 .with_system(recalculate_camera_desination_system)
                 .with_system(refresh_camera_position_system)
                 .with_system(transfer_input_to_player_system)
+                // shooting
                 .with_system(player_shoot)
-                .with_system(projectiles_controller)
-                .with_system(throwable_controller)
-                .with_system(static_controller)
+                .with_system(projectiles_controller.label("projectiles"))
+                .with_system(explosions_controller.label("explosions"))
+                .with_system(pulsation_controller.label("pulses"))
+                .with_system(armaments_despawn)
+                .with_system(debug_damage_event_reader
+                    .after("projectiles")
+                    .after("explosions")
+                    .after("pulses"))
+                // gameplay
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
                 .with_system(check_player_dead)
