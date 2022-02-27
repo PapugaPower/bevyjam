@@ -53,6 +53,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(static_controller)
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
+                .with_system(check_player_dead)
                 .with_system(evaluate_player_detection_triggers_system)
                 .with_system(evaluate_hurt_zones)
         );

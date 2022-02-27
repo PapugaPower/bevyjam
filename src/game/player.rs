@@ -2,6 +2,7 @@ use crate::game::shooting::{LastShootTime, Weapon, AmmoType};
 use bevy::prelude::*;
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
+use crate::AppState;
 use crate::game::crosshair::Crosshair;
 use crate::game::phys_layers::PhysLayer;
 
@@ -29,7 +30,7 @@ pub fn init_player(mut commands: Commands) {
             ..Default::default()
         })
         .insert(Player {})
-        .insert(PlayerHealth { current: 1000., max: 1000.})
+        .insert(PlayerHealth { current: 200., max: 200.})
         .insert(Weapon {
             ammo_type: AmmoType::Static,
             fire_rate: 1.0 / 2.0,
@@ -109,4 +110,14 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
     }
     
     player_tform.translation += final_movement_vector;
+}
+
+pub fn check_player_dead(
+    health_q: Query<&PlayerHealth>,
+    mut state: ResMut<State<AppState>>,
+) {
+    let health = health_q.single();
+    if health.current <= 0.0 {
+        state.push(AppState::GameOverLose).unwrap();
+    }
 }
