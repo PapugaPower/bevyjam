@@ -15,6 +15,7 @@ use crate::game::shooting::*;
 use crate::game::timer::*;
 use crate::game::hurt_zones::*;
 use crate::game::player_triggers::*;
+use crate::game::world_interaction::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
@@ -61,12 +62,17 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                     .after("projectiles")
                     .after("explosions")
                     .after("pulses"))
-                // gameplay
+                // general gameplay
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
                 .with_system(check_player_dead)
                 .with_system(evaluate_player_detection_triggers_system)
                 .with_system(evaluate_hurt_zones)
+                // interaction processing
+                .with_system(process_new_interactions)
+                .with_system(process_interaction_timeouts)
+                .with_system(process_interactable_despawn)
+                .with_system(process_world_medkit_use)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())

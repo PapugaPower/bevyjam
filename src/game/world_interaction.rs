@@ -1,4 +1,7 @@
 use bevy::prelude::*;
+use heron::{CollisionLayers, CollisionShape, RigidBody};
+use crate::game::dev::DevAssets;
+use crate::game::phys_layers::PhysLayer;
 use crate::game::player::PlayerHealth;
 use crate::game::player_triggers::PlayerPresenceDetector;
 
@@ -56,7 +59,7 @@ pub fn process_world_medkit_use(kit_q: Query<(Entity, &Medkit, Option<&DespawnAf
     let mut player_hp = health_q.single_mut();
     for (e, medkit, despawn) in kit_q.iter(){
         let new_hp = (player_hp.current + medkit.healing).clamp(0.0, player_hp.max);
-        player_hp.current += new_hp;
+        player_hp.current = new_hp;
         println!("Player used a world medkit. Healing: {}", medkit.healing);
         
         commands.entity(e).remove::<InteractionDirty>();
@@ -64,6 +67,7 @@ pub fn process_world_medkit_use(kit_q: Query<(Entity, &Medkit, Option<&DespawnAf
         if let Some(despawn) = despawn {
             commands.entity(e).remove::<DespawnAfterInteraction>().
                 insert(ReadyToDespawn);
+            println!("Item depleted, despawning.");
         }
     }
     
@@ -119,4 +123,57 @@ pub fn process_interactable_despawn(q: Query<Entity, With<ReadyToDespawn>>,
     for entity in q.iter(){
         commands.entity(entity).despawn();
     }
+}
+
+
+// DEV SCENE
+pub fn spawn_test_medkits(mut commands: Commands, assets: Res<DevAssets>) {
+    let mut tform2 = Transform::from_xyz(-150., 100., -0.02);
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(32., 32.)),
+                color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                ..Default::default()
+            },
+            transform: tform2,
+            texture: assets.medkit.clone(),
+            ..Default::default()
+        })
+        .insert(PlayerPresenceDetector { detected: false })
+        .insert(Interactive::default())
+        .insert(MultiUse { remaining: 3 })
+        .insert(Medkit {healing: 25.0})
+        .insert(RigidBody::Sensor)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::PlayerTriggers)
+            .with_masks(&[PhysLayer::Player]))
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(20., 20., 1.),
+            border_radius: None,
+        });
+
+    let mut tform = Transform::from_xyz(-190., 100., -0.02);
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(32., 32.)),
+                color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                ..Default::default()
+            },
+            transform: tform,
+            texture: assets.medkit.clone(),
+            ..Default::default()
+        })
+        .insert(PlayerPresenceDetector { detected: false })
+        .insert(Interactive::default())
+        .insert(Medkit {healing: 60.0})
+        .insert(RigidBody::Sensor)
+        .insert(CollisionLayers::none()
+            .with_group(PhysLayer::PlayerTriggers)
+            .with_masks(&[PhysLayer::Player]))
+        .insert(CollisionShape::Cuboid {
+            half_extends: Vec3::new(20., 20., 1.),
+            border_radius: None,
+        });
 }

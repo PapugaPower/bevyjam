@@ -34,7 +34,7 @@ pub fn setup_dev_hurt_zone(mut commands: Commands){
             .with_masks(&[PhysLayer::Player]))
         .insert(CollisionShape::Sphere {radius: 50.0});
 
-    let mut tform2 = Transform::from_xyz(50., 0., 0.);
+    let mut tform2 = Transform::from_xyz(150., 250., 0.);
     tform2.scale = Vec3::new(3., 1.2, 1.0);
     commands
         .spawn_bundle(SpriteBundle {

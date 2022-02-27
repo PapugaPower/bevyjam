@@ -7,6 +7,7 @@ use crate::game::hurt_zones::setup_dev_hurt_zone;
 use crate::game::phys_layers::PhysLayer;
 
 use crate::game::timer::GameTimer;
+use crate::game::world_interaction::spawn_test_medkits;
 
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
@@ -29,6 +30,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(init_game_timer)
                 .with_system(setup_scene)
                 .with_system(setup_dev_hurt_zone)
+                .with_system(spawn_test_medkits)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
@@ -43,7 +45,9 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
 #[derive(AssetCollection)]
 pub struct DevAssets {
     #[asset(key = "enviro.map_prototype")]
-    map_prototype: Handle<Image>,
+    pub map_prototype: Handle<Image>,
+    #[asset(key = "item.medkit")]
+    pub medkit: Handle<Image>
 }
 
 fn init_game_timer(
