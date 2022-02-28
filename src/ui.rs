@@ -1,5 +1,6 @@
 use bevy::{prelude::*, reflect::TypeUuid};
 use bevy_asset_loader::AssetCollection;
+use bevy_kira_audio::*;
 use bevy_ninepatch::*;
 
 use crate::{AppState, FuckStages};
@@ -13,11 +14,13 @@ pub struct UiSetupPlugin;
 impl Plugin for UiSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(NinePatchPlugin::<ContentId>::default());
+        app.insert_resource(UiAudioChannel(AudioChannel::new("ui".into())));
         // FIXME: use actual deserializable assets
         app.add_startup_system(crate::ui::ninepatches::setup_ninepatches);
         //app.add_plugin(bevy_asset_ron::RonAssetPlugin::<Ninepatches>::new(&["np"]));
         app.add_startup_system(init_ui_camera);
         app.add_system_to_stage(FuckStages::Pre, button_interact_visual);
+        app.add_system(button_sounds);
         app.add_system_set(
             SystemSet::on_exit(AppState::MainAssetLoading)
                 .with_system(init_uicfg)
@@ -37,7 +40,15 @@ pub struct UiAssets {
     npimg_button_hovered: Handle<Image>,
     #[asset(key = "ui.npimg.button.clicked")]
     npimg_button_clicked: Handle<Image>,
+    #[asset(key = "ui.snd.button.on")]
+    snd_button_on: Handle<AudioSource>,
+    #[asset(key = "ui.snd.button.off")]
+    snd_button_off: Handle<AudioSource>,
+    #[asset(key = "ui.snd.button.hover")]
+    snd_button_hover: Handle<AudioSource>,
 }
+
+struct UiAudioChannel(AudioChannel);
 
 /// FIXME: move this into UiAssets
 struct UiNinepatches {
@@ -103,6 +114,41 @@ fn button_interact_visual(
             }
             npdata.loaded = false;
             cmd.entity(e).despawn_descendants();
+        }
+    }
+}
+
+fn button_sounds(
+    audio: Res<Audio>,
+    channel: Res<UiAudioChannel>,
+    assets: Option<Res<UiAssets>>,
+    query: Query<
+        &Interaction,
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    if let Some(assets) = assets {
+        for interaction in query.iter() {
+            match interaction {
+                Interaction::None => {
+                    audio.play_in_channel(
+                        assets.snd_button_hover.clone(),
+                        &channel.0
+                    );
+                },
+                Interaction::Hovered => {
+                    audio.play_in_channel(
+                        assets.snd_button_on.clone(),
+                        &channel.0
+                    );
+                },
+                Interaction::Clicked => {
+                    audio.play_in_channel(
+                        assets.snd_button_off.clone(),
+                        &channel.0
+                    );
+                }
+            }
         }
     }
 }
