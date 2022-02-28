@@ -74,6 +74,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(despawn_with::<Crosshair>)
                 .with_system(despawn_with::<Player>)
                 .with_system(despawn_with::<Projectile>)
+                .with_system(despawn_with::<MainCamera>)
                 .with_system(remove_resource::<GameTimer>)
         );
     }
