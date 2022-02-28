@@ -98,6 +98,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 
 #[derive(AssetCollection)]
 pub struct GameAssets {
+
 }
 
 /// Insert as resource on game over, to indicate status

@@ -18,6 +18,11 @@ pub struct PlayerHealth {
     pub current: f32
 }
 
+#[derive(Component)]
+pub struct PlayerMovementSpeed {
+    pub value: f32
+}
+
 pub fn init_player(mut commands: Commands) {
     let player_tform = Transform::from_scale(Vec3::new(48.0, 48.0, 1.0));
 
@@ -32,6 +37,7 @@ pub fn init_player(mut commands: Commands) {
         })
         .insert(Player {})
         .insert(PlayerHealth { current: 200., max: 200.})
+        .insert(PlayerMovementSpeed{value: 320.0})
         .insert(Weapon {
             ammo_type: AmmoType::Projectile,
             damage: 69.0,
@@ -52,13 +58,13 @@ pub fn init_player(mut commands: Commands) {
 		.insert(SpatialAudioReceptor);
 }
 
-pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform, &CollisionShape), With<Player>>,
+pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform, &CollisionShape, &PlayerMovementSpeed), With<Player>>,
                                        xhair_q: Query<&Crosshair>, 
                                        keys: Res<Input<KeyCode>>, 
                                        time: Res<Time>, 
                                        physics_world: PhysicsWorld
 ) {
-    let (mut player_tform, player_col) = player_tform_q.single_mut();
+    let (mut player_tform, player_col, speed) = player_tform_q.single_mut();
     let xhair = xhair_q.single();
     let mut mouse_pos_level = xhair.mouse_pos;
     mouse_pos_level.z = 0.0;
@@ -84,7 +90,7 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
         kb_inupt_vector += Vec3::X;
     }
     
-    let mut final_movement_vector = kb_inupt_vector * 180.0 * time.delta_seconds();
+    let mut final_movement_vector = kb_inupt_vector * speed.value * time.delta_seconds();
     
     // We re-check for collisions and calulate movement deflection three times, 
     // and discard inputs on the fourth - better make the player stand still 

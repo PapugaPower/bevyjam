@@ -9,7 +9,9 @@ pub struct MainCamera{
 }
 
 pub fn init_main_camera(mut commands: Commands){
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d())
+    let mut cam_bundle = OrthographicCameraBundle::new_2d();
+    cam_bundle.orthographic_projection.scale = 1.0;
+    commands.spawn_bundle(cam_bundle)
         .insert(MainCamera{destination: Vec3::ZERO});
 }
 

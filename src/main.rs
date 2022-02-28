@@ -47,7 +47,7 @@ fn main() {
         vsync: true,
         resizable: true,
         width: 1280.,
-        height: 720.,
+        height: 960.,
         ..Default::default()
     });
     app.insert_resource(ClearColor(Color::BLACK));
