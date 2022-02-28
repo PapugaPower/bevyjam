@@ -8,9 +8,11 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy_loading = { git = "https://github.com/IyesGames/bevy_loading" }
+bevy_loading = "*"
+bevy_asset_ron = "*"
 iyes_bevy_util = { git = "https://github.com/IyesGames/iyes_bevy_util" }
 enum-iterator = "0.7.0"
+serde = "1.0.136"
 
 [dependencies.bevy]
 version = "0.6.1"
@@ -48,6 +50,9 @@ git = "https://github.com/PapugaPower/benimator"
 git = "https://github.com/PapugaPower/bevy_asset_loader"
 features = ["dynamic_assets"]
 
+[dependencies.bevy_ninepatch]
+git = "https://github.com/PapugaPower/bevy_ninepatch"
+
 [dependencies.heron]
 git = "https://github.com/PapugaPower/heron"
 features = ["2d"]
@@ -65,6 +70,12 @@ opt-level = 2
 opt-level = "z"
 lto = "thin"
 strip = true
+
+[patch.crates-io.bevy_loading]
+git = "https://github.com/IyesGames/bevy_loading"
+
+[patch.crates-io.bevy_asset_ron]
+git = "https://github.com/IyesGames/bevy_asset_ron"
 
 [patch.crates-io.bevy]
 git = "https://github.com/PapugaPower/bevy"
