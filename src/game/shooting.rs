@@ -59,13 +59,6 @@ pub struct Projectile {
 }
 
 #[derive(Component)]
-pub struct Explosive {
-    detonation_time: Timer,
-    damage: f32,
-    radius: f32,
-}
-
-#[derive(Component)]
 pub struct Pulsing {
     pulse_time: Timer,
     damage: f32,
@@ -138,8 +131,8 @@ pub fn player_shoot(
                             .insert(Armament {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
-                            .insert(Explosive {
-                                detonation_time: Timer::from_seconds(
+                            .insert(Pulsing {
+                                pulse_time: Timer::from_seconds(
                                     weapon.projectile_life_time,
                                     false,
                                 ),
@@ -230,36 +223,6 @@ pub fn projectiles_controller(
             // });
         }
         transform.translation += projectile.direction * bullet_travel;
-    }
-}
-
-pub fn explosions_controller(
-    time: Res<Time>,
-    mut damage_event: EventWriter<DamageEvent>,
-    physics_world: PhysicsWorld,
-    mut query_explosives: Query<(&Transform, &mut Explosive)>,
-) {
-    for (transform, mut explosive) in query_explosives.iter_mut() {
-        // life time check
-        explosive.detonation_time.tick(time.delta());
-        if explosive.detonation_time.finished() {
-            // collision check
-            physics_world.intersections_with_shape(
-                &CollisionShape::Sphere {
-                    radius: explosive.radius,
-                },
-                transform.translation,
-                transform.rotation,
-                CollisionLayers::all::<PhysLayer>(),
-                &mut |e| {
-                    damage_event.send(DamageEvent {
-                        entity: e,
-                        damage: explosive.damage,
-                    });
-                    true
-                },
-            );
-        }
     }
 }
 
