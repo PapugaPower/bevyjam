@@ -1,12 +1,11 @@
 use bevy::{prelude::*, app::AppExit};
 
+use bevy_ninepatch::*;
 use iyes_bevy_util::{despawn_with_recursive};
 
-use crate::{GameMode, AppState};
-use super::UiAssets;
+use crate::{GameMode, AppState, FuckStages};
 
-#[derive(Component)]
-struct MainMenuCleanup;
+use super::{UiAssets, UiNinepatches, ContentId, UiConfig, Btn, fill_btn, spawn_button};
 
 mod btn {
     use bevy::prelude::*;
@@ -17,12 +16,8 @@ mod btn {
     pub struct ExitApp;
 }
 
-pub struct GameModeConfig {
-}
-
-pub struct MainMenuConfig {
-    game_modes: Vec<GameModeConfig>,
-}
+#[derive(Component)]
+struct MainMenuCleanup;
 
 pub struct MainMenuPlugin;
 
@@ -36,44 +31,24 @@ impl Plugin for MainMenuPlugin {
             SystemSet::on_exit(AppState::MainMenu)
                 .with_system(despawn_with_recursive::<MainMenuCleanup>)
         );
-        app.add_system_set(
-            SystemSet::on_update(AppState::MainMenu)
-                .with_system(
-                    super::button_connector::<btn::ExitApp>.system()
-                        .chain(btn_impl_exitapp)
-                )
-                .with_system(
-                    super::button_connector::<btn::EnterGame>.system()
-                        .chain(btn_impl_entergame)
-                )
-        );
+
+        let update = SystemSet::on_update(AppState::MainMenu);
+        let update = btn::ExitApp::register_handler( update);
+        let update = btn::EnterGame::register_handler( update);
+        app.add_system_set(update);
+
+        app.add_system_to_stage(FuckStages::Post, fill_btn::<btn::EnterGame>);
+        app.add_system_to_stage(FuckStages::Post, fill_btn::<btn::ExitApp>);
     }
 }
 
 fn init_mainmenu(
     mut cmd: Commands,
     assets: Res<UiAssets>,
+    uicfg: Res<UiConfig>,
+    nps: Res<UiNinepatches>,
 ) {
-    let btn_style = Style {
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        padding: Rect::all(Val::Px(8.0)),
-        margin: Rect::all(Val::Px(4.0)),
-        flex_grow: 1.0,
-        ..Default::default()
-    };
-    let btn_style_text = TextStyle {
-        font: assets.font_menu_regular.clone(),
-        font_size: 24.0,
-        color: Color::BLACK,
-    };
-    let heading_text_style = TextStyle {
-        font: assets.font_menu_bold.clone(),
-        font_size: 24.0,
-        color: Color::BLACK,
-    };
-
-    cmd.spawn_bundle(NodeBundle {
+    let menu = cmd.spawn_bundle(NodeBundle {
         color: UiColor(Color::rgb(0.5, 0.5, 0.5)),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
@@ -85,7 +60,7 @@ fn init_mainmenu(
             ..Default::default()
         },
         ..Default::default()
-    }).with_children(|p| {
+    })//.with_children(|p| {
         /*
         p.spawn_bundle(NodeBundle {
             material: assets.black.clone(),
@@ -110,6 +85,7 @@ fn init_mainmenu(
             });
         });
         */
+        /*
         p.spawn_bundle(NodeBundle {
             color: UiColor(Color::rgb(0.6, 0.6, 0.6)),
             style: Style {
@@ -119,65 +95,75 @@ fn init_mainmenu(
                 ..Default::default()
             },
             ..Default::default()
-        }).with_children(|r| {
-            r.spawn_bundle(ButtonBundle {
-                style: btn_style.clone(),
-                ..Default::default()
-            }).with_children(|btn| {
-                btn.spawn_bundle(TextBundle {
-                    text: Text::with_section(
-                        "Dev Playground",
-                        btn_style_text.clone(),
-                        Default::default(),
-                    ),
-                    ..Default::default()
-                });
-            }).insert(btn::EnterGame(GameMode::DevPlayground));
-            r.spawn_bundle(ButtonBundle {
-                style: btn_style.clone(),
-                ..Default::default()
-            }).with_children(|btn| {
-                btn.spawn_bundle(TextBundle {
-                    text: Text::with_section(
-                        "Play Game",
-                        btn_style_text.clone(),
-                        Default::default(),
-                    ),
-                    ..Default::default()
-                });
-            }).insert(btn::EnterGame(GameMode::Scenario1));
-        });
-        p.spawn_bundle(ButtonBundle {
-            style: btn_style.clone(),
-            ..Default::default()
-        }).with_children(|btn| {
-            btn.spawn_bundle(TextBundle {
-                text: Text::with_section(
-                    "Exit Game",
-                    btn_style_text.clone(),
-                    Default::default(),
-                ),
-                ..Default::default()
-            });
-        }).insert(btn::ExitApp);
-    }).insert(MainMenuCleanup);
+        })*/
+    //})
+    .insert(MainMenuCleanup).id();
+
+    spawn_button(
+        &mut cmd,
+        uicfg.btn_style.clone(),
+        assets.npimg_button.clone(),
+        nps.npmeta_button.clone(),
+        menu, btn::EnterGame(GameMode::Scenario1)
+    );
+
+    spawn_button(
+        &mut cmd,
+        uicfg.btn_style.clone(),
+        assets.npimg_button.clone(),
+        nps.npmeta_button.clone(),
+        menu, btn::EnterGame(GameMode::DevPlayground)
+    );
+
+    spawn_button(
+        &mut cmd,
+        uicfg.btn_style.clone(),
+        assets.npimg_button.clone(),
+        nps.npmeta_button.clone(),
+        menu, btn::ExitApp
+    );
 }
 
-fn btn_impl_exitapp(
-    In(clicked): In<Option<btn::ExitApp>>,
-    mut exit: EventWriter<AppExit>,
-) {
-    if clicked.is_some() {
-        exit.send(AppExit);
+impl Btn for btn::EnterGame {
+    fn fill_content(&self) -> String {
+        match self.0 {
+            GameMode::DevPlayground => "Dev Playground",
+            GameMode::Scenario1 => "Main Scenario",
+        }.into()
+    }
+    fn register_handler(sset: SystemSet) -> SystemSet {
+        fn handler(
+            In(clicked): In<Option<btn::EnterGame>>,
+            mut state: ResMut<State<AppState>>,
+        ) {
+            if let Some(gm) = clicked {
+                state.set(AppState::GameAssetLoading(gm.0)).unwrap();
+            }
+        }
+        sset.with_system(
+            crate::ui::button_connector::<Self>.system()
+                .chain(handler)
+        )
     }
 }
 
-fn btn_impl_entergame(
-    In(clicked): In<Option<btn::EnterGame>>,
-    mut state: ResMut<State<AppState>>,
-) {
-    if let Some(gm) = clicked {
-        state.set(AppState::GameAssetLoading(gm.0)).unwrap();
+impl Btn for btn::ExitApp {
+    fn fill_content(&self) -> String {
+        "Exit Game".into()
+    }
+    fn register_handler(sset: SystemSet) -> SystemSet {
+        fn handler(
+            In(clicked): In<Option<btn::ExitApp>>,
+            mut exit: EventWriter<AppExit>,
+        ) {
+            if clicked.is_some() {
+                exit.send(AppExit);
+            }
+        }
+        sset.with_system(
+            crate::ui::button_connector::<Self>.system()
+                .chain(handler)
+        )
     }
 }
 
