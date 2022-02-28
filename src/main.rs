@@ -26,6 +26,14 @@ pub enum AppState {
     Credits,
 }
 
+/// Cant we have stageless already! :yeet:
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(StageLabel)]
+enum FuckStages {
+    Pre,
+    Post,
+}
+
 fn main() {
     let mut app = App::new();
 
@@ -44,6 +52,10 @@ fn main() {
     });
     app.insert_resource(ClearColor(Color::BLACK));
     app.add_plugins(DefaultPlugins);
+
+    // extra stages, cuz bevy is fucked like that
+    app.add_stage_after(CoreStage::Update, FuckStages::Post, SystemStage::parallel());
+    app.add_stage_before(CoreStage::Update, FuckStages::Pre, SystemStage::parallel());
 
     // our state enum
     app.add_state(AppState::MainAssetLoading);
