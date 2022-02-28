@@ -231,7 +231,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
 		let mut a = super::SpatialAudio::default();
 		a.source = assets.generator.clone();
 		a.set_looping(true);
-		a.playback_rate = 0.7;
+		a.playback_rate = 0.07;
 		a.attenuation = super::Attenuation::InverseSquareDistance(10.0);
 		a
 	});
@@ -248,8 +248,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     }).insert({
 		let mut a = super::SpatialAudio::default();
 		a.source = assets.generator.clone();
-		a.set_looping(true);
-		a.playback_rate = 0.8;
+		// FIXME multiple looping audio sources breaks things.
+		//a.set_looping(true);
+		a.playback_rate = 0.4;
 		a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
 		a
 	});
