@@ -117,9 +117,11 @@ pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform
 pub fn check_player_dead(
     health_q: Query<&PlayerHealth>,
     mut state: ResMut<State<AppState>>,
+    mut commands: Commands,
 ) {
     let health = health_q.single();
     if health.current <= 0.0 {
-        state.push(AppState::GameOverLose).unwrap();
+        state.push(AppState::GameOver).unwrap();
+        commands.insert_resource(crate::game::GameResult::LoseHealth);
     }
 }

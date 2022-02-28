@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 
 use enum_iterator::IntoEnumIterator;
+use iyes_bevy_util::remove_resource;
 
 mod game;
 mod ui;
@@ -21,8 +22,7 @@ pub enum AppState {
     MainMenu,
     GameAssetLoading(GameMode),
     InGame(GameMode),
-    GameOverWin,
-    GameOverLose,
+    GameOver,
     Credits,
 }
 
@@ -78,6 +78,11 @@ fn main() {
     // our game stuff
     app.add_plugin(ui::UiSetupPlugin);
     app.add_plugin(ui::mainmenu::MainMenuPlugin);
+
+    app.add_system_set(
+        SystemSet::on_exit(AppState::GameOver)
+            .with_system(remove_resource::<game::GameResult>)
+    );
 
     for mode in GameMode::into_enum_iter() {
         app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });

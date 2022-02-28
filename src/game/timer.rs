@@ -14,8 +14,10 @@ pub fn tick_game_timer(
 pub fn check_game_over(
     timer: Res<GameTimer>,
     mut state: ResMut<State<AppState>>,
+    mut commands: Commands,
 ) {
     if timer.0.finished() {
-        state.push(AppState::GameOverLose).unwrap();
+        state.push(AppState::GameOver).unwrap();
+        commands.insert_resource(crate::game::GameResult::LoseTime);
     }
 }
