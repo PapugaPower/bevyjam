@@ -77,7 +77,6 @@ fn main() {
 
     // our game stuff
     app.add_plugin(ui::UiSetupPlugin);
-    app.add_plugin(ui::mainmenu::MainMenuPlugin);
 
     app.add_system_set(
         SystemSet::on_exit(AppState::GameOver)

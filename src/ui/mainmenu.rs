@@ -1,6 +1,5 @@
 use bevy::{prelude::*, app::AppExit};
 
-use bevy_ninepatch::*;
 use iyes_bevy_util::{despawn_with_recursive};
 
 use crate::{GameMode, AppState, FuckStages};

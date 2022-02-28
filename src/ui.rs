@@ -7,6 +7,7 @@ use crate::{AppState, FuckStages};
 
 mod ninepatches;
 
+pub mod gameover;
 pub mod mainmenu;
 
 pub struct UiSetupPlugin;
@@ -25,6 +26,9 @@ impl Plugin for UiSetupPlugin {
             SystemSet::on_exit(AppState::MainAssetLoading)
                 .with_system(init_uicfg)
         );
+
+        app.add_plugin(mainmenu::MainMenuPlugin);
+        app.add_plugin(gameover::GameoverUiPlugin);
     }
 }
 
@@ -58,6 +62,8 @@ struct UiNinepatches {
 struct UiConfig {
     btn_style: Style,
     btn_style_text: TextStyle,
+    heading_style_text: TextStyle,
+    dialog_style_text: TextStyle,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
@@ -173,6 +179,16 @@ fn init_uicfg(
         btn_style_text: TextStyle {
             font: assets.font_menu_regular.clone(),
             font_size: 24.0,
+            color: Color::BLACK,
+        },
+        heading_style_text: TextStyle {
+            font: assets.font_menu_bold.clone(),
+            font_size: 24.0,
+            color: Color::BLACK,
+        },
+        dialog_style_text: TextStyle {
+            font: assets.font_menu_regular.clone(),
+            font_size: 20.0,
             color: Color::BLACK,
         },
     });
