@@ -135,9 +135,11 @@ impl Btn for btn::EnterGame {
         fn handler(
             In(clicked): In<Option<btn::EnterGame>>,
             mut state: ResMut<State<AppState>>,
+            mut cmd: Commands,
         ) {
             if let Some(gm) = clicked {
                 state.set(AppState::GameAssetLoading(gm.0)).unwrap();
+                cmd.insert_resource(gm.0);
             }
         }
         sset.with_system(

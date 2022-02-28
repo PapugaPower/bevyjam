@@ -83,6 +83,10 @@ fn main() {
         SystemSet::on_exit(AppState::GameOver)
             .with_system(remove_resource::<game::GameResult>)
     );
+    app.add_system_set(
+        SystemSet::on_enter(AppState::MainMenu)
+            .with_system(remove_resource::<GameMode>)
+    );
 
     for mode in GameMode::into_enum_iter() {
         app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });
