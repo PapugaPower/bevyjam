@@ -3,6 +3,7 @@ mod main_camera;
 mod player;
 mod shooting;
 mod timer;
+mod doors;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -16,6 +17,7 @@ use crate::game::timer::*;
 use crate::game::hurt_zones::*;
 use crate::game::player_triggers::*;
 use crate::game::world_interaction::*;
+use crate::game::doors::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
@@ -37,6 +39,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
         // add event types
         app.add_event::<DamageEvent>();
+        app.add_event::<DoorUseEvent>();
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state.clone())
@@ -63,6 +66,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(check_player_dead)
                 .with_system(evaluate_player_detection_triggers_system)
                 .with_system(evaluate_hurt_zones)
+                .with_system(door_interaction.label("door_interaction"))
+                .with_system(door_event_processor.after("door_interaction"))
                 // interaction processing
                 .with_system(process_new_interactions)
                 .with_system(process_interaction_timeouts)
