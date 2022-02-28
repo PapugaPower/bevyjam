@@ -57,9 +57,6 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(pulsation_controller.label("pulses"))
                 .with_system(armaments_despawn)
-                .with_system(debug_damage_event_reader
-                    .after("projectiles")
-                    .after("pulses"))
                 // general gameplay
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)

@@ -1,13 +1,13 @@
-use bevy::core::FixedTimestep;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
+
 use crate::game::hurt_zones::setup_dev_hurt_zone;
 use crate::game::phys_layers::PhysLayer;
-
 use crate::game::timer::GameTimer;
 use crate::game::world_interaction::spawn_test_medkits;
+use crate::game::shooting::debug_damage_event_reader;
 
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
@@ -34,7 +34,9 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
-
+                .with_system(debug_damage_event_reader
+                    .after("projectiles")
+                    .after("pulses"))
         );
         app.add_system_set(
             SystemSet::on_exit(self.state)
