@@ -39,6 +39,7 @@ pub struct GamePlugin<S: BevyState> {
 
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
+		app.insert_resource(AudioChannelPool::default());
         // add event types
         app.add_event::<DamageEvent>();
         app.add_event::<DoorUseEvent>();
@@ -76,9 +77,10 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(process_interactable_despawn)
                 .with_system(process_world_medkit_use)
 				// spatial sound
-                .with_system(spatial_audio)
-                .with_system(spatial_audio_changed)
-                .with_system(spatial_audio_added)
+                .with_system(spatial_audio.after("spatial_audio_added"))
+                .with_system(spatial_audio_changed.after("spatial_audio_added"))
+                .with_system(spatial_audio_added.label("spatial_audio_added"))
+                .with_system(spatial_audio_removed)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
