@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
+use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
@@ -53,7 +54,9 @@ pub struct DevAssets {
     #[asset(key = "enviro.map_prototype")]
     pub map_prototype: Handle<Image>,
     #[asset(key = "item.medkit")]
-    pub medkit: Handle<Image>
+    pub medkit: Handle<Image>,
+    #[asset(key = "enviro.generator")]
+	pub generator: Handle<AudioSource>,
 }
 
 fn init_game_timer(
@@ -214,4 +217,41 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),
     });
+
+	// "generator"
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(50.0, 80.0)),
+			color: Color::RED,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(-900.0, 550.0, 0.08),
+		..Default::default()
+    }).insert({
+		let mut a = super::SpatialAudio::default();
+		a.source = assets.generator.clone();
+		a.set_looping(true);
+		a.playback_rate = 0.07;
+		a.attenuation = super::Attenuation::InverseSquareDistance(10.0);
+		a
+	});
+
+	// "generator" that disappears
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(50.0, 80.0)),
+			color: Color::RED,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(-90.0, 50.0, 0.08),
+		..Default::default()
+    }).insert({
+		let mut a = super::SpatialAudio::default();
+		a.source = assets.generator.clone();
+		// FIXME multiple looping audio sources breaks things.
+		//a.set_looping(true);
+		a.playback_rate = 0.4;
+		a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
+		a
+	});
 }

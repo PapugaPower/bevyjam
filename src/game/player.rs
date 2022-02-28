@@ -5,6 +5,7 @@ use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use crate::AppState;
 use crate::game::crosshair::Crosshair;
 use crate::game::phys_layers::PhysLayer;
+use super::SpatialAudioReceptor;
 
 #[derive(Component)]
 pub struct Player {
@@ -47,7 +48,8 @@ pub fn init_player(mut commands: Commands) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::Player)
             .with_masks(&[PhysLayer::World, PhysLayer::Enemies]))
-        .insert(CollisionShape::Sphere { radius: 24.0 });
+        .insert(CollisionShape::Sphere { radius: 24.0 })
+		.insert(SpatialAudioReceptor);
 }
 
 pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform, &CollisionShape), With<Player>>,
