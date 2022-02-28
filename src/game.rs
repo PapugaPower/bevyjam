@@ -1,5 +1,6 @@
 mod audio2d;
 mod crosshair;
+mod hints;
 mod main_camera;
 mod player;
 mod shooting;
@@ -12,6 +13,7 @@ use iyes_bevy_util::*;
 
 use crate::game::audio2d::*; 
 use crate::game::crosshair::*;
+use hints::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
@@ -49,6 +51,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
                 .with_system(init_player)
+				.with_system(init_hints)
         );
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())

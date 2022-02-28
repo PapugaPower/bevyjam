@@ -42,6 +42,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(debug_damage_event_reader
                     .after("projectiles")
                     .after("pulses"))
+				.with_system(fake_dev_hint)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state)
@@ -254,4 +255,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
 		a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
 		a
 	});
+}
+
+fn fake_dev_hint(mut hints: Query<&mut super::Hints, Added<super::Hints>>) {
+	let _ = hints.get_single_mut().map(|mut h| h.push("this is the dev scene"));
 }
