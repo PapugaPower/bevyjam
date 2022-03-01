@@ -1,13 +1,21 @@
 use bevy::prelude::*;
+use enum_iterator::IntoEnumIterator;
+use iyes_bevy_util::despawn_with_recursive;
 
-use crate::{AppState, FuckStages};
+use crate::{AppState, FuckStages, ui::button_connector};
+
+mod ui;
 
 mod select;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(IntoEnumIterator)]
 pub enum UsingTool {
     Select,
 }
+
+#[derive(Component)]
+struct EditorHideCleanup;
 
 pub struct DevEditorPlugin;
 
@@ -23,14 +31,18 @@ impl Plugin for DevEditorPlugin {
         );
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
+                .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
+                .with_system(ui::tool_btn_visual)
                 .with_system(select::mouse_select_sprite)
         );
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)
+                .with_system(ui::spawn_ui)
                 .with_system(select::set_selection_visibility::<true>)
         );
         app.add_system_set(
             SystemSet::on_exit(AppState::DevEditor)
+                .with_system(despawn_with_recursive::<EditorHideCleanup>)
                 .with_system(select::set_selection_visibility::<false>)
         );
     }

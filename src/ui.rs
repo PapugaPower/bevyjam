@@ -37,7 +37,7 @@ pub struct UiAssets {
     #[asset(key = "ui.font_menu_bold")]
     font_menu_bold: Handle<Font>,
     #[asset(key = "ui.font_menu_regular")]
-    font_menu_regular: Handle<Font>,
+    pub font_menu_regular: Handle<Font>,
     #[asset(key = "ui.npimg.button")]
     npimg_button: Handle<Image>,
     #[asset(key = "ui.npimg.button.hovered")]
@@ -59,11 +59,11 @@ struct UiNinepatches {
     npmeta_button: Handle<NinePatchBuilder<ContentId>>,
 }
 
-struct UiConfig {
-    btn_style: Style,
-    btn_style_text: TextStyle,
-    heading_style_text: TextStyle,
-    dialog_style_text: TextStyle,
+pub struct UiConfig {
+    pub btn_style: Style,
+    pub btn_style_text: TextStyle,
+    pub heading_style_text: TextStyle,
+    pub dialog_style_text: TextStyle,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
@@ -71,12 +71,15 @@ enum ContentId {
     ButtonText,
 }
 
+#[derive(Component)]
+struct GameBtn;
+
 pub trait Btn: Component + Clone + Copy {
     fn fill_content(&self) -> String;
     fn register_handler(sset: SystemSet) -> SystemSet;
 }
 
-fn button_connector<B: Component + Clone>(
+pub fn button_connector<B: Component + Clone>(
     mut query: Query<
         (&Interaction, &B),
         (Changed<Interaction>, With<Button>),
@@ -101,7 +104,7 @@ fn button_interact_visual(
     uicfg: Option<Res<UiAssets>>,
     mut query: Query<
         (Entity, &Interaction, &mut NinePatchData<ContentId>),
-        (/*Changed<Interaction>, */With<Button>),
+        (/*Changed<Interaction>, */With<GameBtn>),
     >,
 ) {
     // PERF: change detection not working with ninepatch
@@ -130,7 +133,7 @@ fn button_sounds(
     assets: Option<Res<UiAssets>>,
     query: Query<
         &Interaction,
-        (Changed<Interaction>, With<Button>),
+        (Changed<Interaction>, With<GameBtn>),
     >,
 ) {
     if let Some(assets) = assets {
@@ -171,7 +174,7 @@ fn init_uicfg(
         btn_style: Style {
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
-            padding: Rect::all(Val::Px(8.0)),
+            padding: Rect::all(Val::Px(4.0)),
             margin: Rect::all(Val::Px(4.0)),
             flex_grow: 1.0,
             ..Default::default()
@@ -243,7 +246,10 @@ fn spawn_button<B: Btn>(
             },
             ..Default::default()
         }
-    ).insert(btn).id();
+    )
+    .insert(GameBtn)
+    .insert(btn)
+    .id();
 
     commands.entity(parent).push_children(&[child]);
 }
