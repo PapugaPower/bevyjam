@@ -38,6 +38,8 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
         app.add_system_set(
             SystemSet::on_update(self.state)
 				.with_system(fake_dev_hint)
+				.with_system(enemy_target.before("update_agent_path"))
+				.with_system(enemy_move.after("update_agent_path"))
         );
         app.add_system_set(
             SystemSet::on_exit(self.state)
@@ -81,7 +83,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             .with_group(PhysLayer::Enemies)
             .with_masks(&[PhysLayer::World, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(RigidBody::Dynamic)
-        .insert(CollisionShape::Sphere { radius: 20.0 });
+        .insert(CollisionShape::Sphere { radius: 20.0 })
+		.insert(super::NavAgent::default());
 
     // top
     let width = 945.0;
@@ -265,8 +268,38 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
 		a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
 		a
 	});
+
+	// navmesh
+	commands.spawn_bundle((
+		super::NavMesh::from({
+			let verts = [
+				(-500.0, -500.0, 0.0).into(),
+				(500.0, -500.0, 0.0).into(),
+				(500.0, 500.0, 0.0).into(),
+				(-500.0, 500.0, 0.0).into(),
+			];
+			let tris = [
+				(0, 1, 2).into(),
+				(2, 3, 1).into(),
+			];
+			navmesh::NavMesh::new(verts.into(), tris.into()).unwrap().thicken(1.0).unwrap()
+		}),
+	));
 }
 
 fn fake_dev_hint(mut hints: Query<&mut super::Hints, Added<super::Hints>>) {
 	let _ = hints.get_single_mut().map(|mut h| h.push("this is the dev scene"));
+}
+
+fn enemy_target(mut enemies: Query<&mut super::NavAgent>, player: Query<&Transform, With<super::Player>>) {
+	let tr = player.single();
+	enemies.for_each_mut(|mut e| e.set_target(tr.translation));
+}
+
+fn enemy_move(mut enemies: Query<(&mut Transform, &super::NavAgent)>, time: Res<Time>) {
+	let speed = 30.0;
+	let distance = speed * time.delta_seconds();
+	enemies.for_each_mut(|(mut t, e)| {
+		e.point_on_path(distance).map(|p| t.translation = p);
+	});
 }
