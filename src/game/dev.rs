@@ -49,8 +49,6 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
 pub struct DevAssets {
     #[asset(key = "enviro.map_prototype")]
     pub map_prototype: Handle<Image>,
-    #[asset(key = "item.medkit")]
-    pub medkit: Handle<Image>,
     #[asset(key = "enviro.map_level_0")]
     pub map_level_0: Handle<Image>,
     #[asset(key = "enviro.generator")]

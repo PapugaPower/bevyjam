@@ -119,7 +119,10 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 }
 
 #[derive(AssetCollection)]
-pub struct GameAssets {}
+pub struct GameAssets {
+    #[asset(key = "item.medkit")]
+    pub medkit: Handle<Image>,
+}
 
 /// Insert as resource on game over, to indicate status
 pub enum GameResult {
