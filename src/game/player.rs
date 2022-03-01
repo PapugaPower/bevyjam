@@ -1,4 +1,5 @@
 use crate::game::shooting::{LastShootTime, Weapon, AmmoType};
+use crate::util::WorldCursor;
 use bevy::prelude::*;
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
@@ -58,16 +59,17 @@ pub fn init_player(mut commands: Commands) {
 		.insert(SpatialAudioReceptor);
 }
 
-pub fn transfer_input_to_player_system(mut player_tform_q: Query<(&mut Transform, &CollisionShape, &PlayerMovementSpeed), With<Player>>,
-                                       xhair_q: Query<&Crosshair>, 
-                                       keys: Res<Input<KeyCode>>, 
-                                       time: Res<Time>, 
-                                       physics_world: PhysicsWorld
+pub fn transfer_input_to_player_system(
+    mut player_tform_q: Query<(&mut Transform, &CollisionShape, &PlayerMovementSpeed), With<Player>>,
+    xhair_q: Query<&Crosshair>,
+    keys: Res<Input<KeyCode>>,
+    time: Res<Time>,
+    crs: Res<WorldCursor>,
+    physics_world: PhysicsWorld
 ) {
     let (mut player_tform, player_col, speed) = player_tform_q.single_mut();
     let xhair = xhair_q.single();
-    let mut mouse_pos_level = xhair.mouse_pos;
-    mouse_pos_level.z = 0.0;
+    let mut mouse_pos_level = crs.0.extend(0.0);
     
     let direction = mouse_pos_level - player_tform.translation;
     let angle = direction.y.atan2(direction.x);

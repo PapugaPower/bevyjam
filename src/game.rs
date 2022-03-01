@@ -13,6 +13,7 @@ use iyes_bevy_util::*;
 
 use crate::game::audio2d::*; 
 use crate::game::crosshair::*;
+use crate::util::MainCamera;
 use hints::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
@@ -52,12 +53,12 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(setup_crosshair)
                 .with_system(init_player)
 				.with_system(init_hints)
+                .with_system(set_cursor_visibility::<false>)
         );
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
                 // player movement
-                .with_system(crosshair_positon_update_system)
-                .with_system(mouse_pos_to_wspace_system)
+                .with_system(crosshair_position_update_system)
                 .with_system(recalculate_camera_desination_system)
                 .with_system(refresh_camera_position_system)
                 .with_system(transfer_input_to_player_system)
@@ -92,6 +93,15 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(despawn_with::<Projectile>)
                 .with_system(despawn_with::<MainCamera>)
                 .with_system(remove_resource::<GameTimer>)
+                .with_system(set_cursor_visibility::<true>)
+        );
+        app.add_system_set(
+            SystemSet::on_pause(self.state.clone())
+                .with_system(set_cursor_visibility::<true>)
+        );
+        app.add_system_set(
+            SystemSet::on_resume(self.state.clone())
+                .with_system(set_cursor_visibility::<false>)
         );
     }
 }
@@ -109,4 +119,11 @@ pub enum GameResult {
     LoseHealth,
     /// Player ran out of time
     LoseTime,
+}
+
+fn set_cursor_visibility<const VIS: bool>(
+    mut wnds: ResMut<Windows>,
+){
+    let wnd = wnds.get_primary_mut().unwrap();
+    wnd.set_cursor_visibility(VIS);
 }

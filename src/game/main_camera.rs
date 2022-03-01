@@ -2,9 +2,10 @@
 use core::default::Default;
 use crate::game::crosshair::Crosshair;
 use crate::game::player::Player;
+use crate::util::MainCamera;
 
 #[derive(Component)]
-pub struct MainCamera{
+pub struct CameraControl {
     destination: Vec3
 }
 
@@ -12,14 +13,15 @@ pub fn init_main_camera(mut commands: Commands){
     let mut cam_bundle = OrthographicCameraBundle::new_2d();
     cam_bundle.orthographic_projection.scale = 1.0;
     commands.spawn_bundle(cam_bundle)
-        .insert(MainCamera{destination: Vec3::ZERO});
+        .insert(MainCamera)
+        .insert(CameraControl{destination: Vec3::ZERO});
 }
 
 // Takes player's avatar and crosshair position into account.
-pub fn recalculate_camera_desination_system(cam_tform_q: Query<&Transform, With<MainCamera>>,
+pub fn recalculate_camera_desination_system(cam_tform_q: Query<&Transform, With<CameraControl>>,
                                             xhair_q: Query<&Transform, With<Crosshair>>,
                                             player_q: Query<&Transform, With<Player>>,
-                                            mut cam_q: Query<&mut MainCamera>
+                                            mut cam_q: Query<&mut CameraControl>
 )
 {
     let cam_tform = cam_tform_q.single();
@@ -43,7 +45,7 @@ pub fn recalculate_camera_desination_system(cam_tform_q: Query<&Transform, With<
     cam.destination = new_pos;
 }
 
-pub fn refresh_camera_position_system(mut cam_q: Query<(&mut Transform, &MainCamera)>){
+pub fn refresh_camera_position_system(mut cam_q: Query<(&mut Transform, &CameraControl)>){
     
     let (mut cam_tform, cam) = cam_q.single_mut();
     

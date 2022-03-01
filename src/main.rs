@@ -9,6 +9,7 @@ use iyes_bevy_util::remove_resource;
 
 mod game;
 mod ui;
+mod util;
 
 /// Each level/map in the game
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
@@ -102,6 +103,8 @@ fn main() {
         loading_state: AppState::GameAssetLoading(GameMode::Scenario1),
         state: AppState::InGame(GameMode::Scenario1),
     });
+
+    app.add_plugin(util::UtilPlugin);
 
     // debug systems; uncomment if needed
     //app.add_system(debug_state);
