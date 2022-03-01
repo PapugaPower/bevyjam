@@ -20,7 +20,6 @@ pub fn explosive_objects_controller(
     mut query: Query<(Entity, &Health, &mut Pulsing, &mut ExplosiveObjectState)>,
 ) {
     for (entity, health, mut pulsing, mut state) in query.iter_mut() {
-        println!("barrel: {:?}, {:?}, {:?}", health, pulsing, state);
         match *state {
             ExplosiveObjectState::NotDetonated => {
                 if health.current <= 0.0 {
