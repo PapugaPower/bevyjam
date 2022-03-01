@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 
 use crate::util::WorldCursor;
-use crate::editor::controls::Selectable;
+use crate::editor::controls::EditableSprite;
 
 use super::UsingTool;
 
@@ -41,7 +41,7 @@ impl SelectionBundle {
 pub fn mouse_select_sprite(
     crs: Res<WorldCursor>,
     btn: Res<Input<MouseButton>>,
-    q: Query<(Entity, &GlobalTransform, &Sprite, &Handle<Image>), With<Selectable>>,
+    q: Query<(Entity, &GlobalTransform, &Sprite, &Handle<Image>), With<EditableSprite>>,
     imgs: Res<Assets<Image>>,
     mut cmd: Commands,
     mut sels: ResMut<Selections>,

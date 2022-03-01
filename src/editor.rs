@@ -57,9 +57,7 @@ pub mod controls {
     use bevy::prelude::*;
 
     #[derive(Component)]
-    pub struct Selectable;
-    #[derive(Component)]
-    pub struct TransformEdit;
+    pub struct EditableSprite;
 }
 
 pub fn enter_exit_editor(
