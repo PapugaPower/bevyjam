@@ -8,7 +8,8 @@ use crate::game::player_triggers::PlayerPresenceDetector;
 
 use super::blueprints::Medkit;
 
-#[derive(Component)]
+#[derive(Default, Component, Reflect)]
+#[reflect(Component)]
 pub struct MultiUse {
     pub remaining: i32,
 }

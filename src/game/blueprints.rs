@@ -2,6 +2,7 @@
 
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
+use bevy::utils::HashSet;
 use heron::*;
 
 use crate::FuckStages;
@@ -26,6 +27,11 @@ pub struct BlueprintsPlugin;
 
 impl Plugin for BlueprintsPlugin {
     fn build(&self, app: &mut App) {
+        // registration: add our own types that should be exported to scenes:
+        app.register_type::<Medkit>();
+        app.register_type::<MultiUse>();
+        app.add_startup_system(add_blueprint_meta);
+        //
         app.add_system_set_to_stage(
             FuckStages::Post,
             SystemSet::new()
@@ -39,6 +45,20 @@ trait Blueprint: Component + Reflect {}
 #[derive(SystemParam)]
 struct BlueprintQuery<'w, 's, T: Blueprint> {
     query: Query<'w, 's, (Entity, &'static Transform), Added<T>>,
+}
+
+/// List of types that may be serialized by the scene exporter
+pub struct ExportableTypes {
+    pub names: HashSet<&'static str>,
+}
+
+fn add_blueprint_meta(mut commands: Commands) {
+    let mut names = HashSet::default();
+    // add everything that might be used in a blueprint here:
+    names.insert("Transform");
+    names.insert("Medkit");
+    names.insert("MultiUse");
+    commands.insert_resource(ExportableTypes { names });
 }
 
 // MEDKITS
@@ -59,6 +79,8 @@ fn init_bp_medkit(
     if let Some(assets) = assets {
         for (e, xf) in q_bp.query.iter() {
             commands.entity(e)
+                // scene export support
+                .insert(crate::scene_exporter::SaveSceneMarker)
                 // editor support
                 .insert(crate::editor::controls::EditableSprite)
                 // sprite stuff

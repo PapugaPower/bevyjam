@@ -11,6 +11,7 @@ mod editor;
 mod game;
 mod ui;
 mod util;
+mod scene_exporter;
 
 /// Each level/map in the game
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
@@ -109,6 +110,7 @@ fn main() {
     app.add_plugin(util::UtilPlugin);
     app.add_plugin(editor::DevEditorPlugin);
     app.add_plugin(game::blueprints::BlueprintsPlugin);
+    app.add_plugin(scene_exporter::SerializePlugin);
 
     // debug systems; uncomment if needed
     // app.add_system(debug_state);
