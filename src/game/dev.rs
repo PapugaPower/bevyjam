@@ -1,20 +1,13 @@
-use std::thread::spawn;
-
-use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
-use bevy::reflect::TypeRegistry;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
 use crate::game::environment::debug_environment;
-use crate::scene_exporter::SaveSceneMarker;
 use crate::{AppState, GameMode};
-use crate::game::hurt_zones::setup_dev_hurt_zone;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
-use crate::game::world_interaction::spawn_test_medkits;
 use crate::game::doors::debug_spawn_door;
 
 /// This plugin should add all DevPlayground specific stuff
@@ -38,7 +31,6 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(spawn_dynamic_scene)
                 .with_system(init_game_timer)
                 .with_system(setup_scene)
-                .with_system(spawn_test_medkits)
                 .with_system(debug_spawn_door)
                 .with_system(debug_environment)
         );

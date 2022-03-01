@@ -123,18 +123,3 @@ pub fn process_interactable_despawn(q: Query<Entity, With<ReadyToDespawn>>,
         commands.entity(entity).despawn();
     }
 }
-
-
-// DEV SCENE
-pub fn spawn_test_medkits(mut commands: Commands, assets: Res<DevAssets>) {
-    let tform2 = Transform::from_xyz(-150., 100., -0.02);
-    commands.spawn()
-        .insert(tform2)
-        .insert(Medkit { healing: 25.0 })
-        .insert(MultiUse { remaining: 3 });
-
-    let tform = Transform::from_xyz(-190., 100., -0.02);
-    commands.spawn()
-        .insert(tform)
-        .insert(Medkit { healing: 60.0 });
-}
