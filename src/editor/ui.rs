@@ -10,6 +10,9 @@ use super::{UsingTool, EditorHideCleanup, NewlySpawned};
 #[derive(Component)]
 struct EditorBtn;
 
+#[derive(Default)]
+pub struct SpawnBtnParent(Option<Entity>);
+
 #[derive(Component, Clone, Copy)]
 pub(super) struct ToolBtn(UsingTool);
 
@@ -78,10 +81,42 @@ pub(super) fn tool_btn_visual(
     }
 }
 
+pub(super) fn add_spawn_button<T: Blueprint>(
+    mut cmd: Commands,
+    uicfg: Res<UiConfig>,
+    uiassets: Res<UiAssets>,
+    btnrow: Res<SpawnBtnParent>,
+) {
+    let textstyle_btn = TextStyle {
+        color: Color::BLACK,
+        font_size: 16.0,
+        font: uiassets.font_menu_regular.clone(),
+    };
+
+    let spbtn = SpawnBtn::<T>(PhantomData);
+    let btntext = cmd.spawn_bundle(TextBundle {
+        text: Text::with_section(
+            Medkit::EDITOR_ID,
+            textstyle_btn.clone(),
+            Default::default()
+        ),
+        ..Default::default()
+    }).id();
+
+    let btn = cmd.spawn_bundle(ButtonBundle {
+        color: UiColor(Color::rgb(0.75, 0.75, 0.75)),
+        style: uicfg.btn_style.clone(),
+        ..Default::default()
+    }).insert(EditorBtn).insert(spbtn).id();
+    cmd.entity(btn).push_children(&[btntext]);
+    cmd.entity(btnrow.0.unwrap()).push_children(&[btn]);
+}
+
 pub(super) fn spawn_ui(
     mut cmd: Commands,
     uiassets: Res<UiAssets>,
     uicfg: Res<UiConfig>,
+    mut r_btnrow: ResMut<SpawnBtnParent>,
 ) {
     let textstyle_btn = TextStyle {
         color: Color::BLACK,
@@ -246,23 +281,5 @@ pub(super) fn spawn_ui(
 
     cmd.entity(top2).push_children(&[heading, btnrow]);
 
-    {
-        let spbtn = SpawnBtn::<Medkit>(PhantomData);
-        let btntext = cmd.spawn_bundle(TextBundle {
-            text: Text::with_section(
-                Medkit::EDITOR_ID,
-                textstyle_btn.clone(),
-                Default::default()
-            ),
-            ..Default::default()
-        }).id();
-
-        let btn = cmd.spawn_bundle(ButtonBundle {
-            color: UiColor(Color::rgb(0.75, 0.75, 0.75)),
-            style: uicfg.btn_style.clone(),
-            ..Default::default()
-        }).insert(EditorBtn).insert(spbtn).id();
-        cmd.entity(btn).push_children(&[btntext]);
-        cmd.entity(btnrow).push_children(&[btn]);
-    }
+    r_btnrow.0 = Some(btnrow);
 }

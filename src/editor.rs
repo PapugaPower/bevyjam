@@ -29,12 +29,23 @@ pub struct DevEditorPlugin;
 impl Plugin for DevEditorPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<select::Selections>();
+        app.init_resource::<ui::SpawnBtnParent>();
         app.insert_resource(UsingTool::Select);
         app.add_system(enter_exit_editor);
         app.add_system_to_stage(
             CoreStage::PostUpdate,
             select::selection_track_target
                 .after(bevy::transform::TransformSystem::TransformPropagate)
+        );
+        app.add_system_set(
+            SystemSet::on_enter(AppState::DevEditor)
+                .with_system(ui::spawn_ui.label("editorui"))
+                .with_system(select::set_selection_visibility::<true>)
+        );
+        app.add_system_set(
+            SystemSet::on_exit(AppState::DevEditor)
+                .with_system(despawn_with_recursive::<EditorHideCleanup>)
+                .with_system(select::set_selection_visibility::<false>)
         );
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
@@ -44,17 +55,13 @@ impl Plugin for DevEditorPlugin {
                 .with_system(transform::mouse_move_selections)
                 .with_system(transform::mouse_move_newlyspawned)
                 .with_system(transform::mouse_rotate_selections)
-                .with_system(button_connector::<ui::SpawnBtn<Medkit>>.chain(ui::spawn_btn_handler::<Medkit>))
+                // handle spawn buttons for blueprints:
+                .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
         );
         app.add_system_set(
-            SystemSet::on_enter(AppState::DevEditor)
-                .with_system(ui::spawn_ui)
-                .with_system(select::set_selection_visibility::<true>)
-        );
-        app.add_system_set(
-            SystemSet::on_exit(AppState::DevEditor)
-                .with_system(despawn_with_recursive::<EditorHideCleanup>)
-                .with_system(select::set_selection_visibility::<false>)
+            SystemSet::on_enter(AppState::DevEditor).after("editorui")
+                // add spawn buttons for blueprints:
+                .with_system(ui::add_spawn_button::<Medkit>)
         );
     }
 }
