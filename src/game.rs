@@ -39,6 +39,8 @@ mod world_interaction;
 
 pub use dev::DevPlaygroundPlugin;
 
+pub mod blueprints;
+
 /// This plugin should add all common game systems used in all levels
 pub struct GamePlugin<S: BevyState> {
     pub state: S,

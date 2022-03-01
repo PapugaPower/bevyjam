@@ -6,10 +6,7 @@ use crate::game::damage::Health;
 use crate::game::player::Player;
 use crate::game::player_triggers::PlayerPresenceDetector;
 
-#[derive(Component)]
-pub struct Medkit {
-    pub healing: f32
-}
+use super::blueprints::Medkit;
 
 #[derive(Component)]
 pub struct MultiUse {
@@ -129,54 +126,14 @@ pub fn process_interactable_despawn(q: Query<Entity, With<ReadyToDespawn>>,
 
 // DEV SCENE
 pub fn spawn_test_medkits(mut commands: Commands, assets: Res<DevAssets>) {
-    let mut tform2 = Transform::from_xyz(-150., 100., -0.02);
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(32., 32.)),
-                color: Color::rgba(1.0, 1.0, 1.0, 0.7),
-                ..Default::default()
-            },
-            transform: tform2,
-            texture: assets.medkit.clone(),
-            ..Default::default()
-        })
-        .insert(crate::editor::controls::EditableSprite)
-        .insert(PlayerPresenceDetector { detected: false })
-        .insert(Interactive::default())
-        .insert(MultiUse { remaining: 3 })
-        .insert(Medkit {healing: 25.0})
-        .insert(RigidBody::Sensor)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::PlayerTriggers)
-            .with_masks(&[PhysLayer::Player]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(20., 20., 1.),
-            border_radius: None,
-        });
+    let tform2 = Transform::from_xyz(-150., 100., -0.02);
+    commands.spawn()
+        .insert(tform2)
+        .insert(Medkit { healing: 25.0 })
+        .insert(MultiUse { remaining: 3 });
 
-    let mut tform = Transform::from_xyz(-190., 100., -0.02);
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(32., 32.)),
-                color: Color::rgba(1.0, 1.0, 1.0, 0.7),
-                ..Default::default()
-            },
-            transform: tform,
-            texture: assets.medkit.clone(),
-            ..Default::default()
-        })
-        .insert(crate::editor::controls::EditableSprite)
-        .insert(PlayerPresenceDetector { detected: false })
-        .insert(Interactive::default())
-        .insert(Medkit {healing: 60.0})
-        .insert(RigidBody::Sensor)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::PlayerTriggers)
-            .with_masks(&[PhysLayer::Player]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(20., 20., 1.),
-            border_radius: None,
-        });
+    let tform = Transform::from_xyz(-190., 100., -0.02);
+    commands.spawn()
+        .insert(tform)
+        .insert(Medkit { healing: 60.0 });
 }

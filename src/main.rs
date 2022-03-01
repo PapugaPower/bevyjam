@@ -108,6 +108,7 @@ fn main() {
 
     app.add_plugin(util::UtilPlugin);
     app.add_plugin(editor::DevEditorPlugin);
+    app.add_plugin(game::blueprints::BlueprintsPlugin);
 
     // debug systems; uncomment if needed
     // app.add_system(debug_state);
