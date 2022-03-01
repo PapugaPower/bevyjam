@@ -2,7 +2,7 @@ use bevy::{prelude::*, math::Vec3Swizzles};
 
 use crate::util::{WorldCursor, WorldCursorPrev};
 
-use super::{select::Selection, UsingTool, controls::EditableSprite};
+use super::{select::Selection, UsingTool, controls::EditableSprite, NewlySpawned};
 
 pub fn mouse_move_selections(
     crs: Res<WorldCursor>,
@@ -25,6 +25,23 @@ pub fn mouse_move_selections(
                 xf.translation.x += delta.x;
                 xf.translation.y += delta.y;
             }
+        }
+    }
+}
+
+pub fn mouse_move_newlyspawned(
+    crs: Res<WorldCursor>,
+    crs_old: Res<WorldCursorPrev>,
+    mut q_tgt: Query<(Entity, &mut Transform), With<NewlySpawned>>,
+    btn: Res<Input<MouseButton>>,
+    mut commands: Commands,
+) {
+    for (e, mut xf) in q_tgt.iter_mut() {
+        let delta = crs.0 - crs_old.0;
+        xf.translation.x += delta.x;
+        xf.translation.y += delta.y;
+        if btn.just_pressed(MouseButton::Left) {
+            commands.entity(e).remove::<NewlySpawned>();
         }
     }
 }

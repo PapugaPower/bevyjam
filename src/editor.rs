@@ -2,12 +2,13 @@ use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 use iyes_bevy_util::despawn_with_recursive;
 
-use crate::{AppState, FuckStages, ui::button_connector};
+use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::Medkit};
 
 mod ui;
 
 mod select;
 mod transform;
+//mod spawn;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(IntoEnumIterator)]
@@ -19,6 +20,9 @@ pub enum UsingTool {
 
 #[derive(Component)]
 struct EditorHideCleanup;
+
+#[derive(Component)]
+pub struct NewlySpawned;
 
 pub struct DevEditorPlugin;
 
@@ -38,7 +42,9 @@ impl Plugin for DevEditorPlugin {
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::mouse_select_sprite)
                 .with_system(transform::mouse_move_selections)
+                .with_system(transform::mouse_move_newlyspawned)
                 .with_system(transform::mouse_rotate_selections)
+                .with_system(button_connector::<ui::SpawnBtn<Medkit>>.chain(ui::spawn_btn_handler::<Medkit>))
         );
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)

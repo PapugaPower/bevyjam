@@ -40,7 +40,10 @@ impl Plugin for BlueprintsPlugin {
     }
 }
 
-trait Blueprint: Component + Reflect {}
+pub trait Blueprint: Component + Reflect + Default + Clone {
+    const EDITOR_ID: &'static str;
+    const DEFAULT_Z: f32;
+}
 
 #[derive(SystemParam)]
 struct BlueprintQuery<'w, 's, T: Blueprint> {
@@ -61,15 +64,24 @@ fn add_blueprint_meta(mut commands: Commands) {
     commands.insert_resource(ExportableTypes { names });
 }
 
+#[derive(Bundle, Default)]
+pub struct BlueprintBundle<T: Blueprint> {
+    pub transform: Transform,
+    pub marker: T,
+}
+
 // MEDKITS
 
-#[derive(Default, Component, Reflect)]
+#[derive(Default, Clone, Component, Reflect)]
 #[reflect(Component)]
 pub struct Medkit {
     pub healing: f32,
 }
 
-impl Blueprint for Medkit {}
+impl Blueprint for Medkit {
+    const EDITOR_ID: &'static str = "Medkit";
+    const DEFAULT_Z: f32 = 1.0;
+}
 
 fn init_bp_medkit(
     mut commands: Commands,
