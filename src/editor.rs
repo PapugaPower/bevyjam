@@ -7,11 +7,14 @@ use crate::{AppState, FuckStages, ui::button_connector};
 mod ui;
 
 mod select;
+mod transform;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(IntoEnumIterator)]
 pub enum UsingTool {
     Select,
+    Move,
+    Rotate,
 }
 
 #[derive(Component)]
@@ -34,6 +37,8 @@ impl Plugin for DevEditorPlugin {
                 .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::mouse_select_sprite)
+                .with_system(transform::mouse_move_selections)
+                .with_system(transform::mouse_rotate_selections)
         );
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)

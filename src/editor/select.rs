@@ -13,7 +13,7 @@ const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 pub struct Selections(HashMap<Entity, Entity>);
 
 #[derive(Component)]
-pub struct Selection(Entity);
+pub struct Selection(pub Entity);
 
 #[derive(Bundle)]
 struct SelectionBundle {

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::FuckStages;
 
 pub struct WorldCursor(pub Vec2);
+pub struct WorldCursorPrev(pub Vec2);
 
 #[derive(Component)]
 pub struct MainCamera;
@@ -12,12 +13,14 @@ pub struct UtilPlugin;
 impl Plugin for UtilPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(WorldCursor(Vec2::ZERO));
+        app.insert_resource(WorldCursorPrev(Vec2::ZERO));
         app.add_system_to_stage(FuckStages::Pre, world_cursor_system);
     }
 }
 
 fn world_cursor_system(
     mut crs: ResMut<WorldCursor>,
+    mut crs_old: ResMut<WorldCursorPrev>,
     // need to get window dimensions
     wnds: Res<Windows>,
     // query to get camera transform
@@ -46,6 +49,7 @@ fn world_cursor_system(
             // reduce it to a 2D value
             let world_pos: Vec2 = world_pos.truncate();
 
+            crs_old.0 = crs.0;
             crs.0 = world_pos;
         }
     }
