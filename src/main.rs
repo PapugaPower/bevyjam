@@ -9,6 +9,7 @@ use iyes_bevy_util::remove_resource;
 
 mod game;
 mod ui;
+mod scene_exporter;
 
 /// Each level/map in the game
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
@@ -27,6 +28,7 @@ pub enum AppState {
     InGame(GameMode),
     GameOver,
     Credits,
+    DevSceneEdit,
 }
 
 /// Cant we have stageless already! :yeet:
@@ -78,6 +80,9 @@ fn main() {
         .with_collection::<game::GameAssets>()
         .build(&mut app);
 
+    // register all component types that we want to serialize to scenes
+    app.register_type::<scene_exporter::SaveSceneMarker>();
+
     // our game stuff
     app.add_plugin(ui::UiSetupPlugin);
 
@@ -102,6 +107,8 @@ fn main() {
         loading_state: AppState::GameAssetLoading(GameMode::Scenario1),
         state: AppState::InGame(GameMode::Scenario1),
     });
+
+    app.add_plugin(scene_exporter::SerializePlugin);
 
     // debug systems; uncomment if needed
     //app.add_system(debug_state);

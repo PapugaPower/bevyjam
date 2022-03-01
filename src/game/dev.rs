@@ -1,9 +1,15 @@
+use std::thread::spawn;
+
+use bevy::ecs::system::SystemState;
 use bevy::prelude::*;
+use bevy::reflect::TypeRegistry;
 use bevy_asset_loader::{AssetCollection, AssetLoader};
 use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
+use crate::scene_exporter::SaveSceneMarker;
+use crate::{AppState, GameMode};
 use crate::game::hurt_zones::setup_dev_hurt_zone;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
@@ -36,6 +42,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(setup_dev_hurt_zone)
                 .with_system(spawn_test_medkits)
                 .with_system(debug_spawn_door)
+                .with_system(spawn_dynamic_scene)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
@@ -54,6 +61,8 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
 pub struct DevAssets {
     #[asset(key = "enviro.map_prototype")]
     pub map_prototype: Handle<Image>,
+    #[asset(key = "scene.dev")]
+    pub scene: Handle<DynamicScene>,
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
     #[asset(key = "enviro.map_level_0")]
@@ -70,6 +79,13 @@ fn init_game_timer(
     commands.insert_resource(GameTimer(timer));
 }
 
+fn spawn_dynamic_scene(
+    mut scene_spawner: ResMut<SceneSpawner>,
+    assets: Res<DevAssets>,
+) {
+    scene_spawner.spawn_dynamic(assets.scene.clone());
+}
+
 fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     // enemy
     commands
@@ -81,7 +97,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             },
             transform: Transform::from_translation(Vec3::new(0.0, 100.0, 0.0)),
             ..Default::default()
-        })        
+        })
+        .insert(SaveSceneMarker)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::Enemies)
             .with_masks(&[PhysLayer::World, PhysLayer::Enemies, PhysLayer::Bullets]))
