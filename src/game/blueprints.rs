@@ -1,5 +1,18 @@
 #![allow(unused_imports)]
 
+/// # HOW TO ADD A NEW BLUEPRINT TYPE
+///
+/// - have a unique marker component type
+/// - `impl Blueprint for MyMarker {}`
+/// - register it in `BlueprintsPlugin`
+/// - insert it in `add_blueprint_meta`
+/// - create new init function
+///   (you can copypaste `init_bp_medkit` as a template)
+///   - use your new marker, in the `BlueprintQuery` param
+///   - in the body, insert whatever components you want
+///   - be sure to preserve the transform
+///
+
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
