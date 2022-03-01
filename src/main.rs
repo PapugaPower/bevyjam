@@ -7,6 +7,7 @@ use bevy_asset_loader::{AssetLoader, AssetCollection};
 use enum_iterator::IntoEnumIterator;
 use iyes_bevy_util::remove_resource;
 
+mod editor;
 mod game;
 mod ui;
 mod util;
@@ -28,6 +29,7 @@ pub enum AppState {
     InGame(GameMode),
     GameOver,
     Credits,
+    DevEditor,
 }
 
 /// Cant we have stageless already! :yeet:
@@ -105,9 +107,10 @@ fn main() {
     });
 
     app.add_plugin(util::UtilPlugin);
+    app.add_plugin(editor::DevEditorPlugin);
 
     // debug systems; uncomment if needed
-    //app.add_system(debug_state);
+    // app.add_system(debug_state);
 
     app.run();
 }
