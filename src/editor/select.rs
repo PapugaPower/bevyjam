@@ -38,6 +38,19 @@ impl SelectionBundle {
     }
 }
 
+pub fn keyboard_despawn_selected(
+    mut cmd: Commands,
+    kbd: Res<Input<KeyCode>>,
+    q_sel: Query<(Entity, &Selection)>,
+) {
+    if kbd.just_pressed(KeyCode::Delete) || kbd.just_pressed(KeyCode::Back) {
+        for (e, sel) in q_sel.iter() {
+            cmd.entity(sel.0).despawn_recursive();
+            cmd.entity(e).despawn_recursive();
+        }
+    }
+}
+
 pub fn mouse_select_sprite(
     crs: Res<WorldCursor>,
     btn: Res<Input<MouseButton>>,
