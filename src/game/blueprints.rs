@@ -13,7 +13,7 @@ use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::doors::*;
 use crate::game::enemies::*;
-use crate::game::hurt_zones::*;
+use crate::game::environment::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::phys_layers::*;

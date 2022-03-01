@@ -1,5 +1,5 @@
 use crate::game::crosshair::Crosshair;
-use crate::game::damage::{DamageEvent, DamageSource};
+use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use bevy::prelude::*;
@@ -51,13 +51,6 @@ pub struct Projectile {
     damage: f32,
     direction: Vec3,
     speed: f32,
-}
-
-#[derive(Component)]
-pub struct Pulsing {
-    pulse_time: Timer,
-    damage: f32,
-    radius: f32,
 }
 
 pub fn player_shoot(
@@ -132,6 +125,8 @@ pub fn player_shoot(
                             .insert(Pulsing {
                                 pulse_time: Timer::from_seconds(weapon.projectile_life_time, false),
                                 damage: weapon.damage,
+                            })
+                            .insert(DamageAreaShape::Sphere {
                                 radius: weapon.radius_of_effect,
                             })
                             .insert(RigidBody::Dynamic)
@@ -165,15 +160,10 @@ pub fn player_shoot(
                             .insert(Pulsing {
                                 pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
                                 damage: weapon.damage,
-                                radius: weapon.radius_of_effect,
                             })
-                            .insert(RigidBody::Sensor)
-                            .insert(CollisionShape::Sphere { radius: 0.25 })
-                            .insert(
-                                CollisionLayers::none()
-                                    .with_group(PhysLayer::Bullets)
-                                    .with_masks(&[PhysLayer::World, PhysLayer::Enemies]),
-                            );
+                            .insert(DamageAreaShape::Sphere {
+                                radius: weapon.radius_of_effect,
+                            });
                     }
                 }
             }
@@ -222,36 +212,6 @@ pub fn projectiles_controller(
     }
 }
 
-pub fn pulsation_controller(
-    time: Res<Time>,
-    mut damage_event: EventWriter<DamageEvent>,
-    physics_world: PhysicsWorld,
-    mut query_pulsing: Query<(&Transform, &mut Pulsing)>,
-) {
-    for (transform, mut pulsating) in query_pulsing.iter_mut() {
-        // collision check
-        pulsating.pulse_time.tick(time.delta());
-        if pulsating.pulse_time.finished() {
-            physics_world.intersections_with_shape(
-                &CollisionShape::Sphere {
-                    radius: pulsating.radius,
-                },
-                transform.translation,
-                transform.rotation,
-                CollisionLayers::all::<PhysLayer>(),
-                &mut |e| {
-                    damage_event.send(DamageEvent {
-                        entity: e,
-                        source: DamageSource::Weapon,
-                        damage: pulsating.damage,
-                    });
-                    true
-                },
-            );
-        }
-    }
-}
-
 pub fn armaments_despawn(
     mut commands: Commands,
     time: Res<Time>,
@@ -266,8 +226,8 @@ pub fn armaments_despawn(
     }
 }
 
-pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {
-    for e in events.iter() {
-        debug!("damage event: {:?}", e);
-    }
-}
+// pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {
+//     for e in events.iter() {
+//         debug!("damage event: {:?}", e);
+//     }
+// }

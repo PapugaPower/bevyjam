@@ -1,9 +1,11 @@
+use crate::game::phys_layers::PhysLayer;
 use bevy::prelude::*;
+use heron::{rapier_plugin::PhysicsWorld, CollisionLayers, CollisionShape};
 
-#[derive(Component)]
+#[derive(Debug, Component)]
 pub struct Health {
     pub max: f32,
-    pub current: f32
+    pub current: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -22,8 +24,61 @@ pub struct DamageEvent {
 
 pub fn process_damage(mut events: EventReader<DamageEvent>, mut query_health: Query<&mut Health>) {
     for e in events.iter() {
+        debug!("damage event: {:?}", e);
         if let Ok(mut health) = query_health.get_mut(e.entity) {
             health.current -= e.damage;
+        }
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct Pulsing {
+    pub pulse_time: Timer,
+    pub damage: f32,
+}
+
+#[derive(Component)]
+pub enum DamageAreaShape {
+    Cuboid { half_extends: Vec3 },
+    Sphere { radius: f32 },
+}
+
+impl From<&DamageAreaShape> for CollisionShape {
+    fn from(shape: &DamageAreaShape) -> Self {
+        match shape {
+            DamageAreaShape::Cuboid { half_extends } => CollisionShape::Cuboid {
+                half_extends: *half_extends,
+                border_radius: None,
+            },
+            DamageAreaShape::Sphere { radius } => CollisionShape::Sphere { radius: *radius },
+        }
+    }
+}
+
+pub fn pulsation_controller(
+    time: Res<Time>,
+    mut damage_event: EventWriter<DamageEvent>,
+    physics_world: PhysicsWorld,
+    mut query_pulsing: Query<(&Transform, &DamageAreaShape, &mut Pulsing)>,
+) {
+    for (transform, shape, mut pulsating) in query_pulsing.iter_mut() {
+        // collision check
+        pulsating.pulse_time.tick(time.delta());
+        if pulsating.pulse_time.finished() {
+            physics_world.intersections_with_shape(
+                &shape.into(),
+                transform.translation,
+                transform.rotation,
+                CollisionLayers::all::<PhysLayer>(),
+                &mut |e| {
+                    damage_event.send(DamageEvent {
+                        entity: e,
+                        source: DamageSource::Weapon,
+                        damage: pulsating.damage,
+                    });
+                    true
+                },
+            );
         }
     }
 }

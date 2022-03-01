@@ -8,6 +8,10 @@ mod main_camera;
 mod player;
 mod shooting;
 mod timer;
+mod environment;
+mod phys_layers;
+mod player_triggers;
+mod world_interaction;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -18,7 +22,7 @@ use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::doors::*;
 use crate::game::enemies::*;
-use crate::game::hurt_zones::*;
+use crate::game::environment::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::player_triggers::*;
@@ -32,10 +36,6 @@ pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
-mod hurt_zones;
-mod phys_layers;
-mod player_triggers;
-mod world_interaction;
 
 pub use dev::DevPlaygroundPlugin;
 
@@ -68,29 +68,30 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(recalculate_camera_desination_system)
                 .with_system(refresh_camera_position_system)
                 .with_system(transfer_input_to_player_system)
-                // shooting
-                .with_system(player_shoot)
-                .with_system(projectiles_controller.label("projectiles"))
-                .with_system(pulsation_controller.label("pulses"))
-                .with_system(armaments_despawn)
                 // enemies
                 .with_system(enemy_controller.label("enemy_controller"))
                 .with_system(enemy_spawn)
                 .with_system(enemy_despawn)
-                // general gameplay
-                .with_system(tick_game_timer)
-                .with_system(check_game_over)
-                .with_system(check_player_dead)
-                .with_system(evaluate_player_detection_triggers_system)
-                .with_system(evaluate_hurt_zones)
-                .with_system(door_interaction.label("door_interaction"))
-                .with_system(door_event_processor.after("door_interaction"))
+                // shooting
+                .with_system(player_shoot)
+                .with_system(projectiles_controller.label("projectiles"))
+                .with_system(armaments_despawn)
+                // damage 
+                .with_system(pulsation_controller.label("pulses"))
+                .with_system(explosive_objects_controller)
                 .with_system(
                     process_damage
                         .after("projectiles")
                         .after("pulses")
                         .after("enemy_controller"),
                 )
+                // general gameplay
+                .with_system(tick_game_timer)
+                .with_system(check_game_over)
+                .with_system(check_player_dead)
+                .with_system(evaluate_player_detection_triggers_system)
+                .with_system(door_interaction.label("door_interaction"))
+                .with_system(door_event_processor.after("door_interaction"))
                 // interaction processing
                 .with_system(process_new_interactions)
                 .with_system(process_interaction_timeouts)

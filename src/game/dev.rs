@@ -4,7 +4,7 @@ use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
-use crate::game::hurt_zones::setup_dev_hurt_zone;
+use crate::game::environment::debug_environment;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
 use crate::game::world_interaction::spawn_test_medkits;
@@ -30,10 +30,9 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
             SystemSet::on_enter(self.state)
                 .with_system(init_game_timer)
                 .with_system(setup_scene)
-                .with_system(setup_dev_hurt_zone)
                 .with_system(spawn_test_medkits)
                 .with_system(debug_spawn_door)
-                // .with_system(debug_spawn_enemy)
+                .with_system(debug_environment)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
