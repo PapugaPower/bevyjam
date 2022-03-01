@@ -37,12 +37,12 @@ pub fn init_player(mut commands: Commands) {
         .insert(PlayerMovementSpeed{value: 320.0})
         .insert(Weapon {
             ammo_type: AmmoType::Projectile,
-            damage: 69.0,
-            fire_rate: 1.0 / 5.0,
-            projectile_speed: 500.0,
-            projectile_life_time: 2.0,
+            damage: 26.0,
+            fire_rate: 1.0 / 10.0,
+            projectile_speed: 2000.0,
+            projectile_life_time: 1.0,
             spread: 90.0,
-            projectiles_per_shot: 5,
+            projectiles_per_shot: 1,
             projectile_spawn_offset: 50.0,
             radius_of_effect: 100.0,
         })

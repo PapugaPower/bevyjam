@@ -235,6 +235,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         texture: assets.map_level_0.clone(),
         visibility: Default::default(),
     });
+    return;
 	// "generator"
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {

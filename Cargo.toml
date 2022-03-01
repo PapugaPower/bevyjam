@@ -13,6 +13,7 @@ bevy_asset_ron = "*"
 iyes_bevy_util = { git = "https://github.com/IyesGames/iyes_bevy_util" }
 enum-iterator = "0.7.0"
 serde = "1.0.136"
+rand = "0.8.5"
 
 [dependencies.bevy]
 version = "0.6.1"

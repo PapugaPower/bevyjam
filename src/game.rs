@@ -15,6 +15,7 @@ mod world_interaction;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
+use bevy_kira_audio::{AudioChannel, AudioSource};
 use iyes_bevy_util::*;
 
 use crate::game::audio2d::*;
@@ -49,9 +50,12 @@ pub struct GamePlugin<S: BevyState> {
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
         app.insert_resource(AudioChannelPool::default());
+        app.insert_resource(GameAudioChannel(AudioChannel::new("game".into())));
         // add event types
         app.add_event::<DamageEvent>();
         app.add_event::<DoorUseEvent>();
+        app.add_event::<PlayerFiredEvent>();
+        app.add_event::<BulletImpactEvent>();
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state.clone())
@@ -76,6 +80,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(player_shoot)
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(armaments_despawn)
+                .with_system(handle_shot_audio)
+                .with_system(handle_impact_audio)
                 // damage 
                 .with_system(pulsation_controller.label("pulses"))
                 .with_system(explosive_objects_controller)
@@ -125,7 +131,14 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 pub struct GameAssets {
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
+    #[asset(key = "audio.smg_shot")]
+    pub smg_shot_audio: Handle<AudioSource>,
+    #[asset(path = "audio/world_impacts", folder)]
+    pub world_impacts: Vec<HandleUntyped>,
+    #[asset(path = "audio/monster_impacts", folder)]
+    pub monster_impacts: Vec<HandleUntyped>,
 }
+pub struct GameAudioChannel(AudioChannel);
 
 /// Insert as resource on game over, to indicate status
 pub enum GameResult {
