@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use crate::game::dev::DevAssets;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::PlayerHealth;
+use crate::game::damage::Health;
+use crate::game::player::Player;
 use crate::game::player_triggers::PlayerPresenceDetector;
 
 #[derive(Component)]
@@ -54,7 +55,7 @@ impl Default for InteractionTimeout{
 }
 
 pub fn process_world_medkit_use(kit_q: Query<(Entity, &Medkit, Option<&DespawnAfterInteraction>), With<InteractionDirty>>,
-                                mut health_q: Query<&mut PlayerHealth>, mut commands: Commands
+                                mut health_q: Query<&mut Health, With<Player>>, mut commands: Commands
 ){
     let mut player_hp = health_q.single_mut();
     for (e, medkit, despawn) in kit_q.iter(){

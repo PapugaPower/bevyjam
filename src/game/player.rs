@@ -6,17 +6,12 @@ use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use crate::AppState;
 use crate::game::crosshair::Crosshair;
 use crate::game::phys_layers::PhysLayer;
+use crate::game::damage::Health;
 use super::SpatialAudioReceptor;
 
 #[derive(Component)]
 pub struct Player {
     // to be expanded
-}
-
-#[derive(Component)]
-pub struct PlayerHealth {
-    pub max: f32,
-    pub current: f32
 }
 
 #[derive(Component)]
@@ -37,18 +32,18 @@ pub fn init_player(mut commands: Commands) {
             ..Default::default()
         })
         .insert(Player {})
-        .insert(PlayerHealth { current: 200., max: 200.})
+        .insert(Health { current: 200., max: 200.})
         .insert(PlayerMovementSpeed{value: 320.0})
         .insert(Weapon {
-            ammo_type: AmmoType::Projectile,
+            ammo_type: AmmoType::Throwable,
             damage: 69.0,
             fire_rate: 1.0 / 5.0,
-            projectile_speed: 1000.0,
+            projectile_speed: 10.0,
             projectile_life_time: 2.0,
             spread: 90.0,
             projectiles_per_shot: 5,
             projectile_spawn_offset: 50.0,
-            radius_of_effect: 10.0,
+            radius_of_effect: 100.0,
         })
         .insert(LastShootTime { time: 0.0 })
         .insert(RigidBody::KinematicPositionBased)
@@ -125,7 +120,7 @@ pub fn transfer_input_to_player_system(
 }
 
 pub fn check_player_dead(
-    health_q: Query<&PlayerHealth>,
+    health_q: Query<&Health, With<Player>>,
     mut state: ResMut<State<AppState>>,
     mut commands: Commands,
 ) {

@@ -1,14 +1,9 @@
 use crate::game::crosshair::Crosshair;
+use crate::game::damage::{DamageEvent, DamageSource};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use bevy::prelude::*;
 use heron::{prelude::*, rapier_plugin::PhysicsWorld};
-
-#[derive(Debug, Clone, Copy)]
-pub struct DamageEvent {
-    pub entity: Entity,
-    pub damage: f32,
-}
 
 #[derive(Component)]
 pub struct LastShootTime {
@@ -87,9 +82,12 @@ pub fn player_shoot(
         if last_shoot.time + weapon.fire_rate <= now {
             // if only one bullet we don't care about spread
             let (spread_edge, spread_step) = if weapon.projectiles_per_shot <= 1 {
-                (0.0, 0.0) 
+                (0.0, 0.0)
             } else {
-                (-weapon.spread / 2.0, weapon.spread / (weapon.projectiles_per_shot - 1) as f32)
+                (
+                    -weapon.spread / 2.0,
+                    weapon.spread / (weapon.projectiles_per_shot - 1) as f32,
+                )
             };
             for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
@@ -132,10 +130,7 @@ pub fn player_shoot(
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
                             .insert(Pulsing {
-                                pulse_time: Timer::from_seconds(
-                                    weapon.projectile_life_time,
-                                    false,
-                                ),
+                                pulse_time: Timer::from_seconds(weapon.projectile_life_time, false),
                                 damage: weapon.damage,
                                 radius: weapon.radius_of_effect,
                             })
@@ -207,6 +202,7 @@ pub fn projectiles_controller(
             {
                 damage_event.send(DamageEvent {
                     entity: collision.entity,
+                    source: DamageSource::Weapon,
                     damage: projectile.damage,
                 });
                 commands.entity(entity).despawn();
@@ -246,6 +242,7 @@ pub fn pulsation_controller(
                 &mut |e| {
                     damage_event.send(DamageEvent {
                         entity: e,
+                        source: DamageSource::Weapon,
                         damage: pulsating.damage,
                     });
                     true

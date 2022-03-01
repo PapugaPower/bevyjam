@@ -1,35 +1,39 @@
 mod audio2d;
 mod crosshair;
+mod damage;
+mod doors;
+mod enemies;
 mod hints;
 mod main_camera;
 mod player;
 mod shooting;
 mod timer;
-mod doors;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 use iyes_bevy_util::*;
 
-use crate::game::audio2d::*; 
+use crate::game::audio2d::*;
 use crate::game::crosshair::*;
-use crate::util::MainCamera;
-use hints::*;
+use crate::game::damage::*;
+use crate::game::doors::*;
+use crate::game::enemies::*;
+use crate::game::hurt_zones::*;
 use crate::game::main_camera::*;
 use crate::game::player::*;
+use crate::game::player_triggers::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
-use crate::game::hurt_zones::*;
-use crate::game::player_triggers::*;
 use crate::game::world_interaction::*;
-use crate::game::doors::*;
+use crate::util::MainCamera;
+use hints::*;
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
 pub mod dev;
-mod phys_layers;
 mod hurt_zones;
+mod phys_layers;
 mod player_triggers;
 mod world_interaction;
 
@@ -42,7 +46,7 @@ pub struct GamePlugin<S: BevyState> {
 
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
-		app.insert_resource(AudioChannelPool::default());
+        app.insert_resource(AudioChannelPool::default());
         // add event types
         app.add_event::<DamageEvent>();
         app.add_event::<DoorUseEvent>();
@@ -52,8 +56,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
                 .with_system(init_player)
-				.with_system(init_hints)
-                .with_system(set_cursor_visibility::<false>)
+                .with_system(init_hints)
+                .with_system(set_cursor_visibility::<false>),
         );
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
@@ -67,6 +71,9 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(pulsation_controller.label("pulses"))
                 .with_system(armaments_despawn)
+                // enemies
+                .with_system(enemy_controller.label("enemy_controller"))
+                .with_system(enemy_despawn)
                 // general gameplay
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
@@ -75,16 +82,22 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(evaluate_hurt_zones)
                 .with_system(door_interaction.label("door_interaction"))
                 .with_system(door_event_processor.after("door_interaction"))
+                .with_system(
+                    process_damage
+                        .after("projectiles")
+                        .after("pulses")
+                        .after("enemy_controller"),
+                )
                 // interaction processing
                 .with_system(process_new_interactions)
                 .with_system(process_interaction_timeouts)
                 .with_system(process_interactable_despawn)
                 .with_system(process_world_medkit_use)
-				// spatial sound
+                // spatial sound
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))
                 .with_system(spatial_audio_added.label("spatial_audio_added"))
-                .with_system(spatial_audio_removed)
+                .with_system(spatial_audio_removed),
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
@@ -93,23 +106,19 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(despawn_with::<Projectile>)
                 .with_system(despawn_with::<MainCamera>)
                 .with_system(remove_resource::<GameTimer>)
-                .with_system(set_cursor_visibility::<true>)
+                .with_system(set_cursor_visibility::<true>),
         );
         app.add_system_set(
-            SystemSet::on_pause(self.state.clone())
-                .with_system(set_cursor_visibility::<true>)
+            SystemSet::on_pause(self.state.clone()).with_system(set_cursor_visibility::<true>),
         );
         app.add_system_set(
-            SystemSet::on_resume(self.state.clone())
-                .with_system(set_cursor_visibility::<false>)
+            SystemSet::on_resume(self.state.clone()).with_system(set_cursor_visibility::<false>),
         );
     }
 }
 
 #[derive(AssetCollection)]
-pub struct GameAssets {
-
-}
+pub struct GameAssets {}
 
 /// Insert as resource on game over, to indicate status
 pub enum GameResult {
@@ -121,9 +130,7 @@ pub enum GameResult {
     LoseTime,
 }
 
-fn set_cursor_visibility<const VIS: bool>(
-    mut wnds: ResMut<Windows>,
-){
+fn set_cursor_visibility<const VIS: bool>(mut wnds: ResMut<Windows>) {
     let wnd = wnds.get_primary_mut().unwrap();
     wnd.set_cursor_visibility(VIS);
 }

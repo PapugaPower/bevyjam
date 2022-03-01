@@ -10,8 +10,7 @@ use crate::game::timer::GameTimer;
 use crate::game::world_interaction::spawn_test_medkits;
 use crate::game::shooting::debug_damage_event_reader;
 use crate::game::doors::debug_spawn_door;
-
-use super::doors::{door_interaction, door_event_processor};
+use crate::game::enemies::debug_spawn_enemy;
 
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
@@ -36,12 +35,13 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(setup_dev_hurt_zone)
                 .with_system(spawn_test_medkits)
                 .with_system(debug_spawn_door)
+                .with_system(debug_spawn_enemy)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
-                .with_system(debug_damage_event_reader
-                    .after("projectiles")
-                    .after("pulses"))
+                // .with_system(debug_damage_event_reader
+                //     .after("projectiles")
+                //     .after("pulses"))
 				.with_system(fake_dev_hint)
         );
         app.add_system_set(

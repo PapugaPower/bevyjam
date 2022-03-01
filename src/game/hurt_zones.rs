@@ -3,8 +3,9 @@ use bevy::prelude::KeyCode::Period;
 use heron::{CollisionEvent, CollisionLayers, CollisionShape, RigidBody};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::{Player, PlayerHealth};
+use crate::game::player::Player;
 use crate::game::player_triggers::{PeriodicActivation, PlayerPresenceDetector};
+use crate::game::damage::Health;
 
 #[derive(Component)]
 pub struct PlayerHurtZone {
@@ -58,7 +59,7 @@ pub fn setup_dev_hurt_zone(mut commands: Commands){
             border_radius: None,});
 }
 
-pub fn evaluate_hurt_zones(mut hp_q: Query<&mut PlayerHealth, With<Player>>, 
+pub fn evaluate_hurt_zones(mut hp_q: Query<&mut Health, With<Player>>, 
                            mut zone_q: Query<(&PlayerHurtZone, &PlayerPresenceDetector, &mut PeriodicActivation),>, 
                            time: Res<Time>){
     
