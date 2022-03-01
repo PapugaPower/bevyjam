@@ -49,12 +49,13 @@ impl Plugin for DevEditorPlugin {
         );
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
-                .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::mouse_select_sprite)
+                .with_system(transform::editor_camera)
                 .with_system(transform::mouse_move_selections)
                 .with_system(transform::mouse_move_newlyspawned)
                 .with_system(transform::mouse_rotate_selections)
+                .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 // handle spawn buttons for blueprints:
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
         );

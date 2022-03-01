@@ -1,14 +1,30 @@
-use bevy::{prelude::*, math::Vec3Swizzles};
+use bevy::{prelude::*, math::Vec3Swizzles, input::mouse::MouseMotion};
 
-use crate::util::{WorldCursor, WorldCursorPrev};
+use crate::util::{WorldCursor, WorldCursorPrev, MainCamera};
 
 use super::{select::Selection, UsingTool, controls::EditableSprite, NewlySpawned};
+
+pub fn editor_camera(
+    mut q_cam: Query<&mut Transform, With<MainCamera>>,
+    mut evr_motion: EventReader<MouseMotion>,
+    btn: Res<Input<MouseButton>>,
+) {
+    if btn.pressed(MouseButton::Right) {
+        let mut xf = q_cam.single_mut();
+        let mut delta = Vec2::ZERO;
+        for ev in evr_motion.iter() {
+            delta += ev.delta;
+        }
+        xf.translation.x -= delta.x;
+        xf.translation.y += delta.y;
+    }
+}
 
 pub fn mouse_move_selections(
     crs: Res<WorldCursor>,
     crs_old: Res<WorldCursorPrev>,
     q_sel: Query<&Selection>,
-    mut q_tgt: Query<&mut Transform, With<EditableSprite>>,
+    mut q_tgt: Query<&mut Transform, (With<EditableSprite>, Without<NewlySpawned>)>,
     tool: Res<UsingTool>,
     btn: Res<Input<MouseButton>>,
 ) {
@@ -50,7 +66,7 @@ pub fn mouse_rotate_selections(
     crs: Res<WorldCursor>,
     crs_old: Res<WorldCursorPrev>,
     q_sel: Query<&Selection>,
-    mut q_tgt: Query<&mut Transform, With<EditableSprite>>,
+    mut q_tgt: Query<&mut Transform, (With<EditableSprite>, Without<NewlySpawned>)>,
     tool: Res<UsingTool>,
     btn: Res<Input<MouseButton>>,
 ) {
