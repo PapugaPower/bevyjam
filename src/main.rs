@@ -1,3 +1,6 @@
+// disable windows console in release builds
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 
