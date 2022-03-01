@@ -141,6 +141,7 @@ pub fn spawn_test_medkits(mut commands: Commands, assets: Res<DevAssets>) {
             texture: assets.medkit.clone(),
             ..Default::default()
         })
+        .insert(crate::editor::controls::EditableSprite)
         .insert(PlayerPresenceDetector { detected: false })
         .insert(Interactive::default())
         .insert(MultiUse { remaining: 3 })
@@ -166,6 +167,7 @@ pub fn spawn_test_medkits(mut commands: Commands, assets: Res<DevAssets>) {
             texture: assets.medkit.clone(),
             ..Default::default()
         })
+        .insert(crate::editor::controls::EditableSprite)
         .insert(PlayerPresenceDetector { detected: false })
         .insert(Interactive::default())
         .insert(Medkit {healing: 60.0})
