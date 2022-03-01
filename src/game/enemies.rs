@@ -14,6 +14,14 @@ pub struct EnemyAttack {
     pub damage: f32,
 }
 
+#[derive(Component)]
+pub struct EnemyWave {
+    pub timer: Timer,
+    pub number: u32,
+    pub radius: f32,
+    pub despawn_radius: f32,
+}
+
 pub fn enemy_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
@@ -78,27 +86,18 @@ pub fn enemy_controller(
     }
 }
 
-pub fn enemy_despawn(
+pub fn enemy_spawn(
     mut commands: Commands,
-    query_enemy_health: Query<(Entity, &Health), With<Enemy>>,
+    time: Res<Time>,
+    mut query: Query<(&Transform, &mut EnemyWave), With<Player>>,
 ) {
-    for (enemy, health) in query_enemy_health.iter() {
-        if health.current <= 0.0 {
-            debug!("enemy {:?} despawn", enemy);
-            commands.entity(enemy).despawn();
-        }
-    }
-}
-
-pub fn debug_spawn_enemy(mut commands: Commands) {
-    let start_x = 0.0;
-    let start_y = 500.0;
-    let rows = 4;
-    let cols = 25;
-
-    for r in 0..rows {
-        for c in 0..cols {
-            let enemy_pos = Vec3::new(start_x + 50.0 * c as f32, start_y + 100.0 * r as f32, 0.0);
+    let (transform, mut wave) = query.single_mut();
+    wave.timer.tick(time.delta());
+    if wave.timer.finished() {
+        for i in 0..wave.number {
+            let pos = transform.translation
+                + Quat::from_rotation_z(360.0 / wave.number as f32 * i as f32)
+                    .mul_vec3(Vec3::Y * wave.radius);
             commands
                 .spawn_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -106,7 +105,7 @@ pub fn debug_spawn_enemy(mut commands: Commands) {
                         color: Color::rgb(1.0, 0.0, 0.1),
                         ..Default::default()
                     },
-                    transform: Transform::from_translation(enemy_pos),
+                    transform: Transform::from_translation(pos),
                     ..Default::default()
                 })
                 .insert(Enemy)
@@ -125,6 +124,23 @@ pub fn debug_spawn_enemy(mut commands: Commands) {
                         .with_masks(&[PhysLayer::World, PhysLayer::Player, PhysLayer::Enemies]),
                 )
                 .insert(CollisionShape::Sphere { radius: 25.0 });
+        }
+    }
+}
+
+pub fn enemy_despawn(
+    mut commands: Commands,
+    query_enemy_health: Query<(Entity, &Health, &Transform), With<Enemy>>,
+    query_player: Query<(&Transform, &EnemyWave), With<Player>>,
+) {
+    let (player_transform, wave) = query_player.single();
+    for (enemy, health, transform) in query_enemy_health.iter() {
+        if (player_transform.translation - transform.translation).length() > wave.despawn_radius {
+            commands.entity(enemy).despawn();
+        }
+        if health.current <= 0.0 {
+            debug!("enemy {:?} despawn", enemy);
+            commands.entity(enemy).despawn();
         }
     }
 }

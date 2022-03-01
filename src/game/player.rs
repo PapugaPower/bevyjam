@@ -7,6 +7,7 @@ use crate::AppState;
 use crate::game::crosshair::Crosshair;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::damage::Health;
+use crate::game::enemies::EnemyWave;
 use super::SpatialAudioReceptor;
 
 #[derive(Component)]
@@ -46,6 +47,12 @@ pub fn init_player(mut commands: Commands) {
             radius_of_effect: 100.0,
         })
         .insert(LastShootTime { time: 0.0 })
+        .insert(EnemyWave {
+            timer: Timer::from_seconds(5.0, true),
+            number: 10,
+            radius: 1000.0,
+            despawn_radius: 1500.0,
+        })
         .insert(RigidBody::KinematicPositionBased)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::Player)

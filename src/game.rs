@@ -73,6 +73,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(armaments_despawn)
                 // enemies
                 .with_system(enemy_controller.label("enemy_controller"))
+                .with_system(enemy_spawn)
                 .with_system(enemy_despawn)
                 // general gameplay
                 .with_system(tick_game_timer)
