@@ -6,6 +6,7 @@ mod enemies;
 mod hints;
 mod main_camera;
 mod player;
+mod navmesh;
 mod shooting;
 mod timer;
 
@@ -25,8 +26,13 @@ use crate::game::player_triggers::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
 use crate::game::world_interaction::*;
+<<<<<<< HEAD
 use crate::util::MainCamera;
 use hints::*;
+=======
+use crate::game::doors::*;
+use self::navmesh::*;
+>>>>>>> 7070364 (Integrate navmesh crate)
 
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
@@ -98,7 +104,9 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))
                 .with_system(spatial_audio_added.label("spatial_audio_added"))
-                .with_system(spatial_audio_removed),
+                .with_system(spatial_audio_removed)
+				// AI
+				.with_system(update_agent_path.label("update_agent_path"))
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
