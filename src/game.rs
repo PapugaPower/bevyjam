@@ -13,6 +13,7 @@ mod phys_layers;
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
 use bevy_kira_audio::{AudioChannel, AudioSource};
+use heron::RigidBody;
 use iyes_bevy_util::*;
 
 use crate::game::audio2d::*;
@@ -41,6 +42,12 @@ pub struct GamePlugin<S: BevyState> {
     pub state: S,
 }
 
+/// Add this component to every in-game entity
+/// that is initialized when starting a new game
+/// and should be despawned when the game is over or restarted
+#[derive(Component)]
+struct GameCleanup;
+
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
         app.insert_resource(AudioChannelPool::default());
@@ -50,6 +57,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         app.add_event::<InterationEvent>();
         app.add_event::<PlayerFiredEvent>();
         app.add_event::<BulletImpactEvent>();
+        app.add_system_to_stage(CoreStage::PostUpdate, add_missing_cleanup);
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state.clone())
@@ -104,9 +112,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
-                .with_system(despawn_with::<Crosshair>)
-                .with_system(despawn_with::<Player>)
-                .with_system(despawn_with::<Projectile>)
+                .with_system(despawn_with_recursive::<GameCleanup>)
                 .with_system(despawn_with::<MainCamera>)
                 .with_system(remove_resource::<GameTimer>)
                 .with_system(set_cursor_visibility::<true>),
@@ -146,4 +152,24 @@ pub enum GameResult {
 fn set_cursor_visibility<const VIS: bool>(mut wnds: ResMut<Windows>) {
     let wnd = wnds.get_primary_mut().unwrap();
     wnd.set_cursor_visibility(VIS);
+}
+
+/// Ensure our various game entities have a cleanup marker
+fn add_missing_cleanup(
+    mut commands: Commands,
+    query: Query<Entity, (
+        Without<GameCleanup>,
+        Or<(
+            With<RigidBody>,
+            With<Player>,
+            With<Projectile>,
+            With<Enemy>,
+            With<Trigger>,
+        )>,
+    )>,
+) {
+    for e in query.iter() {
+        commands.entity(e)
+            .insert(GameCleanup);
+    }
 }

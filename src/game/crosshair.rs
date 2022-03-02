@@ -19,7 +19,9 @@ pub fn setup_crosshair(mut commands: Commands) {
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Crosshair);
+    })
+    .insert(super::GameCleanup)
+    .insert(Crosshair);
     
     info!("Crosshair initialized.");
 }

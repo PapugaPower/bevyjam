@@ -28,6 +28,8 @@ pub struct EnemyBundle {
     // include base bundle for rendering
     #[bundle]
     sprite: SpriteBundle,
+    // cleanup marker
+    cleanup: super::GameCleanup,
     // our game behaviors
     enemy: Enemy,
     attack: EnemyAttack,
@@ -49,6 +51,7 @@ impl Default for EnemyBundle {
                 },
                 ..Default::default()
             },
+            cleanup: super::GameCleanup,
             enemy: Enemy,
             attack: EnemyAttack {
                 range: 3.0,

@@ -32,6 +32,7 @@ pub fn init_player(mut commands: Commands) {
             },
             ..Default::default()
         })
+        .insert(super::GameCleanup)
         .insert(Player {})
         .insert(Health { current: 200., max: 200.})
         .insert(PlayerMovementSpeed{value: 320.0})
