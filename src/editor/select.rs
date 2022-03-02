@@ -3,9 +3,8 @@ use bevy::utils::HashMap;
 use heron::CollisionShape;
 
 use crate::util::WorldCursor;
-use crate::editor::controls::EditableSprite;
 
-use super::UsingTool;
+use super::{UsingTool, NoEditor, NewlySpawned};
 
 const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 
@@ -52,10 +51,20 @@ pub fn keyboard_despawn_selected(
     }
 }
 
-pub fn mouse_select_sprite(
+pub fn mouse_select(
     crs: Res<WorldCursor>,
     btn: Res<Input<MouseButton>>,
-    q: Query<(Entity, &GlobalTransform, &Sprite, &Handle<Image>), With<EditableSprite>>,
+    q: Query<(
+        Entity,
+        &GlobalTransform,
+        Option<&Sprite>,
+        Option<&Handle<Image>>,
+        Option<&CollisionShape>
+    ), (
+        Without<NoEditor>,
+        Without<NewlySpawned>,
+        Or<(With<Sprite>, With<CollisionShape>)>
+    )>,
     imgs: Res<Assets<Image>>,
     mut cmd: Commands,
     mut sels: ResMut<Selections>,
@@ -67,18 +76,36 @@ pub fn mouse_select_sprite(
 
     if btn.just_pressed(MouseButton::Left) {
         let mut best = None;
-        for (e, xf, spr, h_img) in q.iter() {
+        for (e, xf, spr, h_img, shape) in q.iter() {
+            //dbg!(best);
             let minv = xf.compute_matrix().inverse();
             let pos_model = minv.transform_point3(crs.0.extend(xf.translation.z));
+            //dbg!(pos_model);
 
-            let spr_sz = spr.custom_size
-                .or_else(|| {
-                    imgs.get(h_img)
-                        .map(|img| {
-                            let isz = img.texture_descriptor.size;
-                            Vec2::new(isz.width as f32, isz.height as f32)
-                        })
-                }).unwrap_or(Vec2::new(2.0, 2.0)) / 2.0;
+            let spr_sz = if let Some(shape) = shape {
+                match shape {
+                    CollisionShape::Cuboid { half_extends, border_radius: _ } => {
+                        //dbg!(half_extends);
+                        half_extends.truncate()
+                    }
+                    _ => {
+                        // unimplemented
+                        continue;
+                    }
+                }
+            } else if let Some(spr) = spr {
+                spr.custom_size
+                    .or_else(|| {
+                        h_img.and_then(|h_img|
+                            imgs.get(h_img)
+                                .map(|img| {
+                                    let isz = img.texture_descriptor.size;
+                                    Vec2::new(isz.width as f32, isz.height as f32)
+                                }))
+                    }).unwrap_or(Vec2::new(2.0, 2.0)) / 2.0
+            } else {
+                continue;
+            };
 
             if pos_model.x > -spr_sz.x && pos_model.x < spr_sz.x &&
                pos_model.y > -spr_sz.y && pos_model.y < spr_sz.y

@@ -18,6 +18,7 @@ use bevy::utils::HashSet;
 use heron::*;
 
 use crate::FuckStages;
+use crate::editor::NewlySpawned;
 
 use super::GameAssets;
 
@@ -103,8 +104,6 @@ fn init_bp_medkit(
                 .spawn()
                 .insert(GlobalTransform::default())
                 .insert(*xf)
-                // editor support
-                .insert(crate::editor::controls::EditableSprite)
                 .insert(Trigger {
                     player_detected: false,
                     entities: vec![e],
@@ -119,6 +118,8 @@ fn init_bp_medkit(
                     half_extends: Vec3::new(20., 20., 1.),
                     border_radius: None,
                 })
+                // hack to make spawning from editor work
+                .insert(NewlySpawned)
                 // medkit is child of sensor
                 .add_child(e);
 
@@ -127,6 +128,8 @@ fn init_bp_medkit(
                 .entity(e)
                 // scene export support
                 .insert(crate::scene_exporter::SaveSceneMarker)
+                // hack to make spawning from editor work
+                .remove::<NewlySpawned>()
                 // sprite stuff
                 .insert_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -134,11 +137,33 @@ fn init_bp_medkit(
                         color: Color::rgba(1.0, 1.0, 1.0, 0.7),
                         ..Default::default()
                     },
-                    // preserve the transform
-                    // transform: *xf,
                     texture: assets.medkit.clone(),
                     ..Default::default()
                 });
         }
     }
 }
+
+// COLLIDERS
+
+/*
+#[derive(Default, Clone, Component, Reflect)]
+#[reflect(Component)]
+pub struct Collider;
+
+impl Blueprint for Collider {
+    const EDITOR_ID: &'static str = "Collider";
+    const DEFAULT_Z: f32 = 0.0;
+}
+
+fn init_bp_collider(
+    mut commands: Commands,
+    q_bp: BlueprintQuery<Collider>,
+    assets: Option<Res<GameAssets>>,
+) {
+    if let Some(assets) = assets {
+        for (e, xf) in q_bp.query.iter() {
+        }
+    }
+}
+*/

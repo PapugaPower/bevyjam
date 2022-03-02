@@ -18,6 +18,10 @@ pub enum UsingTool {
     Rotate,
 }
 
+/// Add to entities that should not be selectable with the editor
+#[derive(Component)]
+pub struct NoEditor;
+
 #[derive(Component)]
 struct EditorHideCleanup;
 
@@ -52,7 +56,7 @@ impl Plugin for DevEditorPlugin {
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::keyboard_despawn_selected)
-                .with_system(select::mouse_select_sprite)
+                .with_system(select::mouse_select)
                 .with_system(select::visualize_spriteless_colliders)
                 .with_system(select::update_collider_visualization)
                 .with_system(transform::editor_camera)
@@ -69,13 +73,6 @@ impl Plugin for DevEditorPlugin {
                 .with_system(ui::add_spawn_button::<Medkit>)
         );
     }
-}
-
-pub mod controls {
-    use bevy::prelude::*;
-
-    #[derive(Component)]
-    pub struct EditableSprite;
 }
 
 pub fn enter_exit_editor(

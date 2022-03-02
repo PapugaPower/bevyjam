@@ -2,7 +2,7 @@ use bevy::{prelude::*, math::Vec3Swizzles, input::mouse::MouseMotion};
 
 use crate::util::{WorldCursor, WorldCursorPrev, MainCamera};
 
-use super::{select::Selection, UsingTool, controls::EditableSprite, NewlySpawned};
+use super::{select::Selection, UsingTool, NewlySpawned};
 
 pub fn editor_camera(
     mut q_cam: Query<&mut Transform, With<MainCamera>>,
@@ -24,7 +24,7 @@ pub fn mouse_move_selections(
     crs: Res<WorldCursor>,
     crs_old: Res<WorldCursorPrev>,
     q_sel: Query<&Selection>,
-    mut q_tgt: Query<&mut Transform, (With<EditableSprite>, Without<NewlySpawned>)>,
+    mut q_tgt: Query<&mut Transform, Without<NewlySpawned>>,
     tool: Res<UsingTool>,
     btn: Res<Input<MouseButton>>,
 ) {
@@ -66,7 +66,7 @@ pub fn mouse_rotate_selections(
     crs: Res<WorldCursor>,
     crs_old: Res<WorldCursorPrev>,
     q_sel: Query<&Selection>,
-    mut q_tgt: Query<&mut Transform, (With<EditableSprite>, Without<NewlySpawned>)>,
+    mut q_tgt: Query<&mut Transform, Without<NewlySpawned>>,
     tool: Res<UsingTool>,
     btn: Res<Input<MouseButton>>,
 ) {
