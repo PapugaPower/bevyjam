@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 
-use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle, Medkit}, util::WorldCursor};
+use crate::{ui::{UiAssets, UiConfig}, game::blueprints::BlueprintMarker, util::WorldCursor};
 
 use super::{UsingTool, EditorHideCleanup, NewlySpawned};
 
@@ -17,7 +17,7 @@ pub struct SpawnBtnParent(Option<Entity>);
 pub(super) struct ToolBtn(UsingTool);
 
 #[derive(Component, Clone, Copy)]
-pub(super) struct SpawnBtn<T: Blueprint>(PhantomData<T>);
+pub(super) struct SpawnBtn<T: BlueprintMarker>(PhantomData<T>);
 
 impl ToolBtn {
     fn label(&self) -> &'static str {
@@ -38,16 +38,15 @@ pub(super) fn tool_btn_handler(
     }
 }
 
-pub(super) fn spawn_btn_handler<T: Blueprint>(
+pub(super) fn spawn_btn_handler<T: BlueprintMarker>(
     In(clicked): In<Option<SpawnBtn<T>>>,
     mut commands: Commands,
     crs: Res<WorldCursor>,
 ) {
     if clicked.is_some() {
-        commands.spawn_bundle(BlueprintBundle {
-            transform: Transform::from_translation(crs.0.extend(T::DEFAULT_Z)),
-            marker: T::default(),
-        }).insert(NewlySpawned);
+        commands.spawn_bundle(T::BlueprintBundle::default())
+        .insert(Transform::from_translation(crs.0.extend(T::DEFAULT_Z)))
+        .insert(NewlySpawned);
     }
 }
 
@@ -81,7 +80,7 @@ pub(super) fn tool_btn_visual(
     }
 }
 
-pub(super) fn add_spawn_button<T: Blueprint>(
+pub(super) fn add_spawn_button<T: BlueprintMarker>(
     mut cmd: Commands,
     uicfg: Res<UiConfig>,
     uiassets: Res<UiAssets>,
@@ -96,7 +95,7 @@ pub(super) fn add_spawn_button<T: Blueprint>(
     let spbtn = SpawnBtn::<T>(PhantomData);
     let btntext = cmd.spawn_bundle(TextBundle {
         text: Text::with_section(
-            Medkit::EDITOR_ID,
+            T::EDITOR_ID,
             textstyle_btn.clone(),
             Default::default()
         ),

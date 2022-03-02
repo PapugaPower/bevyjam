@@ -42,6 +42,12 @@ pub use dev::DevPlaygroundPlugin;
 
 pub mod blueprints;
 
+/// Add this component to every in-game entity
+/// that is initialized when starting a new game
+/// and should be despawned when the game is over or restarted
+#[derive(Component)]
+struct GameCleanup;
+
 /// This plugin should add all common game systems used in all levels
 pub struct GamePlugin<S: BevyState> {
     pub state: S,
@@ -111,6 +117,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
+                .with_system(despawn_with_recursive::<GameCleanup>)
                 .with_system(despawn_with::<Crosshair>)
                 .with_system(despawn_with::<Player>)
                 .with_system(despawn_with::<Projectile>)

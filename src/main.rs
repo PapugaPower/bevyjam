@@ -1,3 +1,5 @@
+#![feature(associated_type_defaults)]
+
 // disable windows console in release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 

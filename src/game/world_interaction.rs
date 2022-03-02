@@ -1,17 +1,19 @@
 use bevy::prelude::*;
 use heron::{CollisionLayers, CollisionShape, RigidBody};
+use crate::editor::controls::EditableSpriteBundle;
 use crate::game::dev::DevAssets;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::damage::Health;
 use crate::game::player::Player;
 use crate::game::player_triggers::PlayerPresenceDetector;
 
-use super::blueprints::Medkit;
+use super::{GameAssets, blueprints};
+use super::blueprints::BlueprintMarker;
 
-#[derive(Default, Component, Reflect)]
+#[derive(Default, Clone, Copy, Component, Reflect)]
 #[reflect(Component)]
 pub struct MultiUse {
-    pub remaining: i32,
+    pub remaining: u32,
 }
 
 #[derive(Component)]
@@ -52,7 +54,71 @@ impl Default for InteractionTimeout{
     }
 }
 
-pub fn process_world_medkit_use(kit_q: Query<(Entity, &Medkit, Option<&DespawnAfterInteraction>), With<InteractionDirty>>,
+#[derive(Default, Clone, Component, Reflect)]
+#[reflect(Component)]
+pub struct Healing {
+    pub healing: f32,
+}
+
+/// Bevy Bundle for easy spawning of entities
+#[derive(Bundle)]
+pub struct MedkitBundle {
+    // include base bundle for rendering
+    #[bundle]
+    sprite: SpriteBundle,
+    // cleanup marker
+    cleanup: super::GameCleanup,
+    // editor enablement
+    #[bundle]
+    editor: EditableSpriteBundle<blueprints::Medkit>,
+    // our game behaviors
+    healing: Healing,
+    multi_use: MultiUse,
+    presence: PlayerPresenceDetector,
+    interactive: Interactive,
+    // physics
+    rigidbody: RigidBody,
+    phys_layers: CollisionLayers,
+    phys_shape: CollisionShape,
+}
+
+impl MedkitBundle {
+    pub fn from_blueprint(
+        assets: &GameAssets,
+        transform: &Transform,
+        healing: Option<&Healing>,
+        multi_use: Option<&MultiUse>,
+    ) -> Self {
+        MedkitBundle {
+            sprite: SpriteBundle {
+                texture: assets.medkit.clone(),
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(32., 32.)),
+                    color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                    ..Default::default()
+                },
+                transform: *transform,
+                ..Default::default()
+            },
+            cleanup: super::GameCleanup,
+            editor: EditableSpriteBundle::default(),
+            healing: healing.cloned().unwrap_or_default(),
+            multi_use: multi_use.cloned().unwrap_or_default(),
+            presence: PlayerPresenceDetector::default(),
+            interactive: Interactive::default(),
+            rigidbody: RigidBody::Sensor,
+            phys_layers: CollisionLayers::none()
+                .with_group(PhysLayer::PlayerTriggers)
+                .with_masks(&[PhysLayer::Player]),
+            phys_shape: CollisionShape::Cuboid {
+                half_extends: Vec3::new(20., 20., 1.),
+                border_radius: None,
+            },
+        }
+    }
+}
+
+pub fn process_world_medkit_use(kit_q: Query<(Entity, &Healing, Option<&DespawnAfterInteraction>), With<InteractionDirty>>,
                                 mut health_q: Query<&mut Health, With<Player>>, mut commands: Commands
 ){
     let mut player_hp = health_q.single_mut();

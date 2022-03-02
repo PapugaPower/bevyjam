@@ -8,7 +8,7 @@ pub struct PeriodicActivation {
     pub last_update: f64
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct PlayerPresenceDetector {
     pub detected: bool,
 }

@@ -71,8 +71,17 @@ impl Plugin for DevEditorPlugin {
 pub mod controls {
     use bevy::prelude::*;
 
-    #[derive(Component)]
+    use crate::{scene_exporter::SaveSceneMarker, game::blueprints::BlueprintMarker};
+
+    #[derive(Component, Default)]
     pub struct EditableSprite;
+
+    #[derive(Bundle, Default)]
+    pub struct EditableSpriteBundle<B: BlueprintMarker> {
+        save: SaveSceneMarker,
+        control: EditableSprite,
+        blueprint: B,
+    }
 }
 
 pub fn enter_exit_editor(
