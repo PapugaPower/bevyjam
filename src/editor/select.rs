@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
+use heron::CollisionShape;
 
 use crate::util::WorldCursor;
 use crate::editor::controls::EditableSprite;
@@ -130,5 +131,63 @@ pub fn selection_track_target(
             cmd.entity(e).despawn();
             sels.0.remove(&sel.0);
         }
+    }
+}
+
+#[derive(Component)]
+pub struct ColliderVisualized;
+
+pub fn visualize_spriteless_colliders(
+    mut cmd: Commands,
+    q: Query<(Entity, &CollisionShape), (Without<Sprite>, Without<ColliderVisualized>)>
+) {
+    for (e, shape) in q.iter() {
+        match shape {
+            CollisionShape::Cuboid { half_extends, border_radius: _ } => {
+                let bundle = SpriteBundle {
+                    sprite: Sprite {
+                        color: Color::rgba(1.0, 0.75, 0.5, 0.25),
+                        custom_size: Some(half_extends.truncate() * 2.0),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                };
+                cmd.entity(e)
+                    .insert(ColliderVisualized)
+                    .insert(bundle.sprite)
+                    .insert(bundle.texture)
+                    .insert(bundle.visibility);
+            }
+            _ => {
+                // unimplemented
+            }
+        }
+    }
+}
+
+pub fn update_collider_visualization(
+    mut q: Query<(&mut Sprite, &CollisionShape), With<ColliderVisualized>>
+) {
+    for (mut spr, shape) in q.iter_mut() {
+        match shape {
+            CollisionShape::Cuboid { half_extends, border_radius: _ } => {
+                spr.custom_size = Some(half_extends.truncate() * 2.0);
+            }
+            _ => {
+                // unimplemented
+            }
+        }
+    }
+}
+
+pub fn cleanup_collider_visualizations(
+    mut cmd: Commands,
+    q: Query<Entity, With<ColliderVisualized>>,
+) {
+    for e in q.iter() {
+        cmd.entity(e)
+            .remove::<ColliderVisualized>()
+            .remove::<Sprite>()
+            .remove::<Handle<Image>>();
     }
 }

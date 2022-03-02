@@ -92,16 +92,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     // top
     let width = 945.0;
     let height = 25.0;
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-25.5, 355.0, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(-25.5, 355.0, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
@@ -111,16 +104,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             border_radius: None,
         });
     // bot
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-25.5, -85.0, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(-25.5, -85.0, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
@@ -132,16 +118,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     // letf top
     let width = 20.0;
     let height = 130.0;
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-488.0, 280.0, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(-488.0, 280.0, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
@@ -151,16 +130,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             border_radius: None,
         });
     // letf bot
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(-488.0, -7.5, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(-488.0, -7.5, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
@@ -172,16 +144,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     // right top
     let width = 20.0;
     let height = 130.0;
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(437.0, 280.0, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(437.0, 280.0, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
@@ -191,16 +156,9 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             border_radius: None,
         });
     // right bot
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(width, height)),
-                color: Color::rgb(0.9, 0.9, 0.9),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(437.0, -7.5, 0.0),
-            ..Default::default()
-        })
+    commands.spawn()
+        .insert(GlobalTransform::default())
+        .insert(Transform::from_xyz(437.0, -7.5, 0.0))
         .insert(RigidBody::Static)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)

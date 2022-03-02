@@ -46,12 +46,15 @@ impl Plugin for DevEditorPlugin {
             SystemSet::on_exit(AppState::DevEditor)
                 .with_system(despawn_with_recursive::<EditorHideCleanup>)
                 .with_system(select::set_selection_visibility::<false>)
+                .with_system(select::cleanup_collider_visualizations)
         );
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::keyboard_despawn_selected)
                 .with_system(select::mouse_select_sprite)
+                .with_system(select::visualize_spriteless_colliders)
+                .with_system(select::update_collider_visualization)
                 .with_system(transform::editor_camera)
                 .with_system(transform::mouse_move_selections)
                 .with_system(transform::mouse_move_newlyspawned)
