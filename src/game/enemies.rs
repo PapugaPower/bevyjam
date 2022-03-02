@@ -108,7 +108,7 @@ pub fn enemy_controller(
                 move_vector,
                 CollisionLayers::none()
                     .with_group(PhysLayer::Enemies)
-                    .with_mask(PhysLayer::World),
+                    .with_masks(&[PhysLayer::World]),
                 |_entitity| true,
             );
 
@@ -143,7 +143,6 @@ pub fn enemy_spawn(
             let pos = transform.translation
                 + Quat::from_rotation_z(360.0 / wave.number as f32 * i as f32)
                     .mul_vec3(Vec3::Y * wave.radius);
-
             commands.spawn_bundle(EnemyBundle::default())
                 .insert(Transform::from_translation(pos));
         }

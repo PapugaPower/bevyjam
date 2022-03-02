@@ -56,7 +56,7 @@ pub fn init_player(mut commands: Commands) {
         .insert(RigidBody::KinematicPositionBased)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::Player)
-            .with_masks(&[PhysLayer::World, PhysLayer::Enemies]))
+            .with_masks(&[PhysLayer::World, PhysLayer::PlayerTriggers]))
         .insert(CollisionShape::Sphere { radius: 24.0 })
 		.insert(SpatialAudioReceptor);
 }

@@ -12,7 +12,6 @@
 ///   - in the body, insert whatever components you want
 ///   - be sure to preserve the transform
 ///
-
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
@@ -25,16 +24,13 @@ use super::GameAssets;
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
-use crate::game::doors::*;
 use crate::game::enemies::*;
 use crate::game::environment::*;
 use crate::game::main_camera::*;
-use crate::game::player::*;
 use crate::game::phys_layers::*;
-use crate::game::player_triggers::*;
+use crate::game::player::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
-use crate::game::world_interaction::*;
 
 pub struct BlueprintsPlugin;
 
@@ -47,8 +43,7 @@ impl Plugin for BlueprintsPlugin {
         //
         app.add_system_set_to_stage(
             FuckStages::Post,
-            SystemSet::new()
-                .with_system(init_bp_medkit)
+            SystemSet::new().with_system(init_bp_medkit),
         );
     }
 }
@@ -103,11 +98,35 @@ fn init_bp_medkit(
 ) {
     if let Some(assets) = assets {
         for (e, xf) in q_bp.query.iter() {
-            commands.entity(e)
-                // scene export support
-                .insert(crate::scene_exporter::SaveSceneMarker)
+            // trigger for medkit
+            commands
+                .spawn()
+                .insert(GlobalTransform::default())
+                .insert(*xf)
                 // editor support
                 .insert(crate::editor::controls::EditableSprite)
+                .insert(Trigger {
+                    player_detected: false,
+                    entities: vec![e],
+                })
+                .insert(RigidBody::Sensor)
+                .insert(
+                    CollisionLayers::none()
+                        .with_group(PhysLayer::PlayerTriggers)
+                        .with_masks(&[PhysLayer::Player]),
+                )
+                .insert(CollisionShape::Cuboid {
+                    half_extends: Vec3::new(20., 20., 1.),
+                    border_radius: None,
+                })
+                // medkit is child of sensor
+                .add_child(e);
+
+            // medkit
+            commands
+                .entity(e)
+                // scene export support
+                .insert(crate::scene_exporter::SaveSceneMarker)
                 // sprite stuff
                 .insert_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -116,21 +135,10 @@ fn init_bp_medkit(
                         ..Default::default()
                     },
                     // preserve the transform
-                    transform: *xf,
+                    // transform: *xf,
                     texture: assets.medkit.clone(),
                     ..Default::default()
-                })
-                .insert(PlayerPresenceDetector { detected: false })
-                .insert(Interactive::default())
-                .insert(RigidBody::Sensor)
-                .insert(CollisionLayers::none()
-                    .with_group(PhysLayer::PlayerTriggers)
-                    .with_masks(&[PhysLayer::Player]))
-                .insert(CollisionShape::Cuboid {
-                    half_extends: Vec3::new(20., 20., 1.),
-                    border_radius: None,
                 });
         }
     }
 }
-

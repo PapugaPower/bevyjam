@@ -1,7 +1,6 @@
 mod audio2d;
 mod crosshair;
 mod damage;
-mod doors;
 mod enemies;
 mod hints;
 mod main_camera;
@@ -10,8 +9,6 @@ mod shooting;
 mod timer;
 mod environment;
 mod phys_layers;
-mod player_triggers;
-mod world_interaction;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -21,15 +18,12 @@ use iyes_bevy_util::*;
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
-use crate::game::doors::*;
 use crate::game::enemies::*;
-use crate::game::environment::*;
+use crate::game::environment::{*, door::*, medkit::*};
 use crate::game::main_camera::*;
 use crate::game::player::*;
-use crate::game::player_triggers::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
-use crate::game::world_interaction::*;
 use crate::util::MainCamera;
 use hints::*;
 
@@ -53,7 +47,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         app.insert_resource(GameAudioChannel(AudioChannel::new("game".into())));
         // add event types
         app.add_event::<DamageEvent>();
-        app.add_event::<DoorUseEvent>();
+        app.add_event::<InterationEvent>();
         app.add_event::<PlayerFiredEvent>();
         app.add_event::<BulletImpactEvent>();
         // add systems to `self.state`
@@ -91,18 +85,17 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                         .after("pulses")
                         .after("enemy_controller"),
                 )
+                // interaction processing
+                .with_system(trigger_player_detection)
+                .with_system(trigger_interaction.label("trigger_interaction"))
+                .with_system(triggir_timeout_process)
                 // general gameplay
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
                 .with_system(check_player_dead)
-                .with_system(evaluate_player_detection_triggers_system)
-                .with_system(door_interaction.label("door_interaction"))
-                .with_system(door_event_processor.after("door_interaction"))
-                // interaction processing
-                .with_system(process_new_interactions)
-                .with_system(process_interaction_timeouts)
-                .with_system(process_interactable_despawn)
-                .with_system(process_world_medkit_use)
+                .with_system(door_interaction.after("trigger_interaction"))
+                .with_system(medkit_interaction.after("trigger_interaction"))
+                .with_system(explosive_objects_controller)
                 // spatial sound
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))

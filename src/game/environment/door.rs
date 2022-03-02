@@ -1,11 +1,7 @@
-use crate::game::player_triggers::PlayerPresenceDetector;
-use crate::game::world_interaction::{InteractionDirty, Interactive};
+use super::{InterationEvent, Trigger};
+use crate::game::phys_layers::PhysLayer;
 use bevy::prelude::*;
-use heron::{CollisionShape, RigidBody};
-
-pub struct DoorUseEvent {
-    entity: Entity,
-}
+use heron::{CollisionLayers, CollisionShape, RigidBody};
 
 pub enum DoorOpenStatus {
     Opened,
@@ -30,34 +26,12 @@ pub struct Door {
     pub rotation_side: DoorRotationSide,
 }
 
-#[derive(Component)]
-pub struct DoorSensor {
-    doors: Vec<Entity>,
-}
-
 pub fn door_interaction(
-    mut commands: Commands,
-    mut door_events: EventWriter<DoorUseEvent>,
-    doors_sensors: Query<(Entity, &DoorSensor), With<InteractionDirty>>,
-) {
-    for (e, sensor) in doors_sensors.iter() {
-
-        // TODO refactor to use events
-        commands.entity(e).remove::<InteractionDirty>();
-
-        for door in sensor.doors.iter() {
-            debug!("using door: {:?}", door);
-            door_events.send(DoorUseEvent { entity: *door });
-        }
-    }
-}
-
-pub fn door_event_processor(
-    mut door_events: EventReader<DoorUseEvent>,
+    mut interaction_events: EventReader<InterationEvent>,
     mut doors: Query<(&CollisionShape, &mut Door, &mut Transform)>,
 ) {
-    for door in door_events.iter() {
-        if let Ok((collision_shape, mut door, mut transform)) = doors.get_mut(door.entity) {
+    for interaction in interaction_events.iter() {
+        if let Ok((collision_shape, mut door, mut transform)) = doors.get_mut(interaction.entity) {
             let half_door_len = match collision_shape {
                 CollisionShape::Cuboid { half_extends, .. } => half_extends[1],
                 _ => {
@@ -137,13 +111,20 @@ pub fn debug_spawn_door(mut commands: Commands) {
             transform: Transform::from_translation(sensor1_pos),
             ..Default::default()
         })
-        .insert(DoorSensor { doors: vec![door] })
-        .insert(PlayerPresenceDetector { detected: false })
-        .insert(Interactive::default())
+        .insert(Trigger {
+            player_detected: false,
+            entities: vec![door],
+        })
+        .insert(RigidBody::Sensor)
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(10.0, 10.0, 0.1),
             border_radius: None,
-        });
+        })
+        .insert(
+            CollisionLayers::new(PhysLayer::PlayerTriggers, PhysLayer::Player)
+                // .with_group(PhysLayer::PlayerTriggers)
+                // .with_masks(&[PhysLayer::Player]),
+        );
 
     let sensor2_pos = Vec3::new(480.0, 136.0, 0.0);
     commands
@@ -156,11 +137,19 @@ pub fn debug_spawn_door(mut commands: Commands) {
             transform: Transform::from_translation(sensor2_pos),
             ..Default::default()
         })
-        .insert(DoorSensor { doors: vec![door] })
-        .insert(PlayerPresenceDetector { detected: false })
-        .insert(Interactive::default())
+        .insert(Trigger {
+            player_detected: false,
+            entities: vec![door],
+        })
+        .insert(RigidBody::Sensor)
         .insert(CollisionShape::Cuboid {
             half_extends: Vec3::new(10.0, 10.0, 0.1),
             border_radius: None,
-        });
+        })
+        .insert(
+            CollisionLayers::new(PhysLayer::PlayerTriggers, PhysLayer::Player)
+            // CollisionLayers::none()
+            //     .with_group(PhysLayer::PlayerTriggers)
+            //     .with_masks(&[PhysLayer::Player]),
+        );
 }

@@ -4,11 +4,11 @@ use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
-use crate::game::environment::debug_environment;
+use crate::game::environment::debug_environment_damage_zones;
 use crate::{AppState, GameMode};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
-use crate::game::doors::debug_spawn_door;
+use crate::game::environment::door::debug_spawn_door;
 
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
@@ -32,7 +32,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(init_game_timer)
                 .with_system(setup_scene)
                 .with_system(debug_spawn_door)
-                .with_system(debug_environment)
+                .with_system(debug_environment_damage_zones)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
