@@ -22,6 +22,51 @@ pub struct EnemyWave {
     pub despawn_radius: f32,
 }
 
+/// Bevy Bundle for easy spawning of entities
+#[derive(Bundle)]
+pub struct EnemyBundle {
+    // include base bundle for rendering
+    #[bundle]
+    sprite: SpriteBundle,
+    // our game behaviors
+    enemy: Enemy,
+    attack: EnemyAttack,
+    health: Health,
+    // physics
+    rigidbody: RigidBody,
+    phys_layers: CollisionLayers,
+    phys_shape: CollisionShape,
+}
+
+impl Default for EnemyBundle {
+    fn default() -> EnemyBundle {
+        EnemyBundle {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    custom_size: Some(Vec2::new(50.0, 50.0)),
+                    color: Color::rgb(1.0, 0.0, 0.1),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            enemy: Enemy,
+            attack: EnemyAttack {
+                range: 3.0,
+                damage: 5.0,
+            },
+            health: Health {
+                max: 69.0,
+                current: 69.0,
+            },
+            rigidbody: RigidBody::KinematicPositionBased,
+            phys_layers: CollisionLayers::none()
+                .with_group(PhysLayer::Enemies)
+                .with_masks(&[PhysLayer::World, PhysLayer::Player, PhysLayer::Enemies]),
+            phys_shape: CollisionShape::Sphere { radius: 25.0 }
+        }
+    }
+}
+
 pub fn enemy_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
@@ -98,32 +143,9 @@ pub fn enemy_spawn(
             let pos = transform.translation
                 + Quat::from_rotation_z(360.0 / wave.number as f32 * i as f32)
                     .mul_vec3(Vec3::Y * wave.radius);
-            commands
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(50.0, 50.0)),
-                        color: Color::rgb(1.0, 0.0, 0.1),
-                        ..Default::default()
-                    },
-                    transform: Transform::from_translation(pos),
-                    ..Default::default()
-                })
-                .insert(Enemy)
-                .insert(Health {
-                    max: 69.0,
-                    current: 69.0,
-                })
-                .insert(EnemyAttack {
-                    range: 3.0,
-                    damage: 5.0,
-                })
-                .insert(RigidBody::KinematicPositionBased)
-                .insert(
-                    CollisionLayers::none()
-                        .with_group(PhysLayer::Enemies)
-                        .with_masks(&[PhysLayer::World, PhysLayer::Player, PhysLayer::Enemies]),
-                )
-                .insert(CollisionShape::Sphere { radius: 25.0 });
+
+            commands.spawn_bundle(EnemyBundle::default())
+                .insert(Transform::from_translation(pos));
         }
     }
 }
