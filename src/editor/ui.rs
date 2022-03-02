@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 
-use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle, Medkit}, util::WorldCursor};
+use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle}, util::WorldCursor};
 
 use super::{UsingTool, EditorHideCleanup, NewlySpawned};
 
@@ -96,7 +96,7 @@ pub(super) fn add_spawn_button<T: Blueprint>(
     let spbtn = SpawnBtn::<T>(PhantomData);
     let btntext = cmd.spawn_bundle(TextBundle {
         text: Text::with_section(
-            Medkit::EDITOR_ID,
+            T::EDITOR_ID,
             textstyle_btn.clone(),
             Default::default()
         ),
