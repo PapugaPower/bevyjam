@@ -54,8 +54,7 @@ pub(super) fn mouse_move_newlyspawned(
         xf.translation.x += delta.x;
         xf.translation.y += delta.y;
         if btn.just_pressed(MouseButton::Left) {
-            btn.clear_just_pressed(MouseButton::Left);
-            toolstate.push(ToolState::Using(*tool)).unwrap();
+            toolstate.push(ToolState::Using(*tool)).ok();
             commands.entity(e).remove::<NewlySpawned>();
         }
     }

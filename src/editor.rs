@@ -24,10 +24,10 @@ pub enum UsingTool {
 #[derive(Component)]
 struct EditorHideCleanup;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct NewlySpawned;
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Editable;
 
 pub struct DevEditorPlugin;
@@ -68,6 +68,7 @@ impl Plugin for DevEditorPlugin {
                 .with_system(select::mouse_select)
                 .with_system(select::keyboard_despawn_selected)
                 .with_system(select::keyboard_deselect_all)
+                .with_system(select::keyboard_duplicate_collider)
         );
         app.add_system_set_to_stage(
             ToolStage,

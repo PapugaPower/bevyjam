@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use heron::CollisionShape;
 
-use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker};
+use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker, game::blueprints::BasicBlueprintBundle};
 
-use super::{UsingTool, NewlySpawned, collider::EditableCollider, Editable};
+use super::{UsingTool, NewlySpawned, collider::EditableCollider, Editable, ToolState};
 
 const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 
@@ -171,6 +171,40 @@ pub fn selection_track_collider(
     for (mut spr, sel) in q_sel.iter_mut() {
         if let Ok(edit) = q_tgt.get(sel.0) {
             spr.custom_size = Some(edit.half_extends * 2.0);
+        }
+    }
+}
+
+pub(super) fn keyboard_duplicate_collider(
+    mut cmd: Commands,
+    mut sels: ResMut<Selections>,
+    q_sel: Query<(Entity, &Selection)>,
+    q_src: Query<(&Transform, &EditableCollider)>,
+    kbd: Res<Input<KeyCode>>,
+    mut toolstate: ResMut<State<ToolState>>,
+) {
+    if kbd.just_pressed(KeyCode::D) {
+        for (e, sel) in q_sel.iter() {
+            if let Ok((xf, edit)) = q_src.get(sel.0) {
+                // spawn new collider copying transform and dimensions
+                let new = cmd.spawn_bundle(BasicBlueprintBundle {
+                    transform: *xf,
+                    marker: edit.clone(),
+                })
+                    .insert(GlobalTransform::default())
+                    .insert(crate::scene_exporter::SaveSceneMarker)
+                    .insert(Editable)
+                    .insert(NewlySpawned)
+                    .id();
+                // add selection for it
+                let newsel = cmd.spawn_bundle(SelectionBundle::new(new, edit.half_extends * 2.0)).id();
+                sels.0.insert(new, newsel);
+                // spawning state
+                toolstate.set(ToolState::Spawning).ok();
+            }
+            // remove all existing selections
+            cmd.entity(e).despawn_recursive();
+            sels.0.remove(&sel.0);
         }
     }
 }
