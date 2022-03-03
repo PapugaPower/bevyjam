@@ -20,16 +20,28 @@ pub struct PlayerMovementSpeed {
     pub value: f32,
 }
 
+#[derive(Component)]
+pub enum ShootingAnimationState {
+    NotShooting,
+    Shooting,
+}
+
+#[derive(Component)]
+pub struct ShootingAnimationTimer {
+    pub animation_time: f32,
+    pub timer: Option<Timer>,
+}
+
 pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
     if let Some(assets) = assets {
         let player_transform = Transform::default();
         let _x = commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
-                    custom_size: Some(Vec2::new(48.0, 48.0)), 
+                    custom_size: Some(Vec2::new(48.0, 48.0)),
                     ..Default::default()
                 },
-                
+
                 texture: assets.player_idle.clone(),
                 transform: player_transform,
                 ..Default::default()
@@ -53,6 +65,11 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
                 radius_of_effect: 100.0,
             })
             .insert(LastShootTime { time: 0.0 })
+            .insert(ShootingAnimationState::NotShooting)
+            .insert(ShootingAnimationTimer {
+                animation_time: 0.05,
+                timer: None,
+            })
             .insert(EnemyWave {
                 timer: Timer::from_seconds(5.0, true),
                 number: 10,
@@ -67,6 +84,40 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
             )
             .insert(CollisionShape::Sphere { radius: 24.0 })
             .insert(SpatialAudioReceptor);
+    }
+}
+
+pub fn player_shooting_animation(
+    time: Res<Time>,
+    assets: Option<Res<GameAssets>>,
+    mut query_player: Query<(
+        &mut Handle<Image>,
+        &mut ShootingAnimationState,
+        &mut ShootingAnimationTimer,
+    )>,
+) {
+    if let Some(assets) = assets {
+        let (mut texture, mut state, mut timer) = query_player.single_mut();
+        match state.as_mut() {
+            ShootingAnimationState::NotShooting => {
+                if let Some(t) = &mut timer.timer {
+                    t.tick(time.delta());
+                    if t.finished() {
+                        *texture = assets.player_idle.clone();
+                        timer.timer = None;
+                    }
+                }
+            }
+            ShootingAnimationState::Shooting => {
+                if let Some(t) = &mut timer.timer {
+                    t.reset();
+                } else {
+                    timer.timer = Some(Timer::from_seconds(timer.animation_time, false));
+                    *texture = assets.player_shooting.clone();
+                }
+                *state = ShootingAnimationState::NotShooting;
+            }
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::game::crosshair::Crosshair;
 use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::Player;
+use crate::game::player::{Player, ShootingAnimationState};
 use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
@@ -61,12 +61,12 @@ pub fn player_shoot(
     mut ev_fired: EventWriter<PlayerFiredEvent>,
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut query_player: Query<(Entity, &Transform, &Weapon, &mut LastShootTime), With<Player>>,
+    mut query_player: Query<(Entity, &Transform, &Weapon, &mut LastShootTime, &mut ShootingAnimationState), With<Player>>,
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
     // TODO handle input
     if keys.pressed(KeyCode::Space) {
-        let (e, player_transform, weapon, mut last_shoot) = query_player.single_mut();
+        let (e, player_transform, weapon, mut last_shoot, mut animation_state) = query_player.single_mut();
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let spawn_transform = {
@@ -77,6 +77,15 @@ pub fn player_shoot(
 
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
+            // sound
+            ev_fired.send(PlayerFiredEvent {
+                entity: e,
+                ammo_type: weapon.ammo_type,
+            });
+            // animation
+            *animation_state = ShootingAnimationState::Shooting;
+
+            // firing
             // if only one bullet we don't care about spread
             let (spread_edge, spread_step) = if weapon.projectiles_per_shot <= 1 {
                 (0.0, 0.0)
@@ -86,11 +95,6 @@ pub fn player_shoot(
                     weapon.spread / (weapon.projectiles_per_shot - 1) as f32,
                 )
             };
-
-            ev_fired.send(PlayerFiredEvent {
-                entity: e,
-                ammo_type: weapon.ammo_type,
-            });
 
             for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())

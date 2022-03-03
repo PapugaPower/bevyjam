@@ -95,6 +95,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 )
                 // animation
                 .with_system(explosive_objects_animation)
+                .with_system(player_shooting_animation)
                 // interaction processing
                 .with_system(trigger_player_detection)
                 .with_system(trigger_interaction.label("trigger_interaction"))
