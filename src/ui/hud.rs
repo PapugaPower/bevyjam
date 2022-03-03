@@ -3,7 +3,7 @@ use bevy::{prelude::*, app::AppExit};
 
 use iyes_bevy_util::{BevyState, despawn_with_recursive};
 
-use crate::{GameMode, AppState, FuckStages, GunMagazine, SpareAmmo};
+use crate::{GameMode, AppState, FuckStages, WeaponMagazine, SpareAmmo};
 use crate::game::damage::Health;
 use crate::game::player::Player;
 
@@ -87,7 +87,7 @@ fn init_mainmenu(
 
 fn update_ammo(
     mut q: Query<&mut Text, With<AmmoCounter>>,
-    mut ammo_q: Query<(&GunMagazine, &SpareAmmo)>
+    mut ammo_q: Query<(&WeaponMagazine, &SpareAmmo)>
 ) {
     let mut text = q.single_mut();
     let (mag, spare) = ammo_q.single();

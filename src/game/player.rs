@@ -1,10 +1,10 @@
+use super::shooting::WeaponryBundle;
 use super::{GameAssets, SpatialAudioReceptor};
 use crate::game::animations::ShootingAnimationBundle;
 use crate::game::crosshair::Crosshair;
 use crate::game::damage::Health;
 use crate::game::enemies::EnemyWave;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::shooting::{AmmoType, GunMagazine, LastShootTime, SpareAmmo, Weapon};
 use crate::util::WorldCursor;
 use crate::AppState;
 use bevy::prelude::*;
@@ -23,8 +23,7 @@ pub struct PlayerMovementSpeed {
 
 pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
     if let Some(assets) = assets {
-        let player_transform = Transform::from_translation(
-            Vec3::new(-2982.9265, 1052.7454, 0.0));
+        let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 0.0));
         let _x = commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
@@ -43,20 +42,7 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
                 max: 200.,
             })
             .insert(PlayerMovementSpeed { value: 320.0 })
-            .insert(Weapon {
-                ammo_type: AmmoType::Projectile,
-                damage: 26.0,
-                fire_rate: 1.0 / 10.0,
-                projectile_speed: 2000.0,
-                projectile_life_time: 1.0,
-                spread: 90.0,
-                projectiles_per_shot: 1,
-                projectile_spawn_offset: 50.0,
-                radius_of_effect: 100.0,
-            })
-            .insert(SpareAmmo{ current: 40})
-            .insert(GunMagazine{ current: 14, max: 20, reload_time: 2.0, current_reload: 0.0 })
-            .insert(LastShootTime { time: 0.0 })
+            .insert_bundle(WeaponryBundle::default())
             .insert_bundle(ShootingAnimationBundle::default())
             .insert(EnemyWave {
                 timer: Timer::from_seconds(5.0, true),
@@ -75,8 +61,7 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
     }
 }
 
-pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input<KeyCode>>)
-{
+pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::P) {
         let t = q.single();
         println!("Current player position: {}", t.translation.to_string());

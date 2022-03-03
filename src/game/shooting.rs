@@ -78,7 +78,7 @@ pub struct Projectile {
     speed: f32,
 }
 #[derive(Component)]
-pub struct GunMagazine {
+pub struct WeaponMagazine {
     pub current: i32,
     pub max: i32,
     pub reload_time: f32,
@@ -88,6 +88,40 @@ pub struct GunMagazine {
 #[derive(Component)]
 pub struct SpareAmmo {
     pub current: i32,
+}
+
+#[derive(Bundle)]
+pub struct WeaponryBundle {
+    pub weapon: Weapon,
+    pub weapon_magazine: WeaponMagazine,
+    pub spare_ammo: SpareAmmo,
+    pub last_shoot_time: LastShootTime,
+}
+
+impl Default for WeaponryBundle {
+    fn default() -> Self {
+        Self {
+            weapon: Weapon {
+                ammo_type: AmmoType::Projectile,
+                damage: 26.0,
+                fire_rate: 1.0 / 10.0,
+                projectile_speed: 2000.0,
+                projectile_life_time: 1.0,
+                spread: 90.0,
+                projectiles_per_shot: 1,
+                projectile_spawn_offset: 50.0,
+                radius_of_effect: 100.0,
+            },
+            spare_ammo: SpareAmmo { current: 40 },
+            weapon_magazine: WeaponMagazine {
+                current: 14,
+                max: 20,
+                reload_time: 2.0,
+                current_reload: 0.0,
+            },
+            last_shoot_time: LastShootTime { time: 0.0 },
+        }
+    }
 }
 
 pub fn player_shoot(
@@ -102,7 +136,7 @@ pub fn player_shoot(
             &Weapon,
             &mut LastShootTime,
             &mut ShootingAnimationState,
-            &mut GunMagazine,
+            &mut WeaponMagazine,
         ),
         With<Player>,
     >,
@@ -112,9 +146,12 @@ pub fn player_shoot(
     if keys.pressed(MouseButton::Left) {
         let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) =
             query_player.single_mut();
+
+        // return if out of ammo or reloading
         if mag.current < 1 || mag.current_reload > 0.0 {
             return;
-        } // return if out of ammo or reloading
+        }
+
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let spawn_transform = {
@@ -125,6 +162,8 @@ pub fn player_shoot(
 
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
+            last_shoot.time = now;
+
             // sound
             ev_fired.send(PlayerFiredEvent {
                 entity: e,
@@ -145,7 +184,7 @@ pub fn player_shoot(
             };
 
             // reduce current ammo in mag
-            mag.current = mag.current - 1;
+            mag.current -= 1;
 
             for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
@@ -241,11 +280,11 @@ pub fn player_shoot(
                     }
                 }
             }
-            last_shoot.time = now;
         }
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn projectiles_controller(
     mut commands: Commands,
     time: Res<Time>,
@@ -304,7 +343,7 @@ pub fn armaments_despawn(
 pub fn gun_reload(
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut q: Query<(&mut GunMagazine, &mut SpareAmmo), With<Player>>,
+    mut q: Query<(&mut WeaponMagazine, &mut SpareAmmo), With<Player>>,
 ) {
     let (mut mag, mut spare_ammo) = q.single_mut();
 
@@ -313,15 +352,14 @@ pub fn gun_reload(
         mag.current_reload += time.delta_seconds();
         if mag.current_reload > mag.reload_time {
             mag.current_reload = 0.0;
-            let mut fill = 0;
             let deficit = mag.max - mag.current;
-            if spare_ammo.current >= deficit {
-                fill = deficit;
+            let fill = if spare_ammo.current >= deficit {
+                deficit
             } else {
-                fill = spare_ammo.current % deficit;
-            }
-            mag.current = mag.current + fill;
-            spare_ammo.current = spare_ammo.current - fill;
+                spare_ammo.current % deficit
+            };
+            mag.current += fill;
+            spare_ammo.current -= fill;
         }
         return;
     }
