@@ -63,6 +63,8 @@ impl Plugin for DevEditorPlugin {
             ToolStage,
             SystemSet::on_update(ToolState::Using(UsingTool::Select))
                 .with_system(select::mouse_select)
+                .with_system(select::keyboard_despawn_selected)
+                .with_system(select::keyboard_deselect_all)
         );
         app.add_system_set_to_stage(
             ToolStage,
@@ -97,7 +99,6 @@ impl Plugin for DevEditorPlugin {
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
-                .with_system(select::keyboard_despawn_selected)
                 .with_system(collider::visualize_spriteless_colliders)
                 .with_system(collider::update_collider_visualization)
                 .with_system(transform::editor_camera)

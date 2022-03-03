@@ -51,6 +51,20 @@ pub fn keyboard_despawn_selected(
     }
 }
 
+pub fn keyboard_deselect_all(
+    mut cmd: Commands,
+    kbd: Res<Input<KeyCode>>,
+    q_sel: Query<(Entity, &Selection)>,
+    mut sels: ResMut<Selections>,
+) {
+    if kbd.just_pressed(KeyCode::X) {
+        for (e, sel) in q_sel.iter() {
+            cmd.entity(e).despawn_recursive();
+            sels.0.remove(&sel.0);
+        }
+    }
+}
+
 pub fn mouse_select(
     crs: Res<WorldCursor>,
     mut btn: ResMut<Input<MouseButton>>,
@@ -140,11 +154,11 @@ pub fn selection_track_target(
             if let Ok(mut xf) = q_xf.get_mut(e) {
                 *xf = *xf_target;
             } else {
-                cmd.entity(e).despawn();
+                cmd.entity(e).despawn_recursive();
                 sels.0.remove(&sel.0);
             }
         } else {
-            cmd.entity(e).despawn();
+            cmd.entity(e).despawn_recursive();
             sels.0.remove(&sel.0);
         }
     }
