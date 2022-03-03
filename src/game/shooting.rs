@@ -72,7 +72,7 @@ pub fn player_shoot(
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let spawn_transform = {
             let mut pt = *player_transform;
-            pt.translation += shoot_dir * weapon.projectile_spawn_offset;;
+            pt.translation += shoot_dir * weapon.projectile_spawn_offset;
             pt
         };
 
@@ -166,7 +166,7 @@ pub fn player_shoot(
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
                             .insert(Pulsing {
-                                pulse_time: Timer::from_seconds(weapon.projectile_speed, true),
+                                pulse_time: Timer::from_seconds(weapon.projectile_speed, false),
                                 damage: weapon.damage,
                             })
                             .insert(DamageAreaShape::Sphere {
@@ -193,23 +193,20 @@ pub fn projectiles_controller(
     for (entity, projectile, mut transform) in query_projectiles.iter_mut() {
         let ray_cast = physics_world.ray_cast(transform.translation, projectile.direction, true);
         let bullet_travel = projectile.speed * time.delta_seconds();
-        let mut surface = ImpactSurface::World;
         if let Some(collision) = ray_cast {
-            // we need to manually check for collision with different entities
-            // TODO refactor maybe
-            if collision.entity == player_entity {
-                surface = ImpactSurface::Player;
+            let surface = if collision.entity == player_entity {
+                ImpactSurface::Player
             } else if (collision.collision_point - transform.translation).length() <= bullet_travel {
                 damage_event.send(DamageEvent {
                     entity: collision.entity,
                     source: DamageSource::Weapon,
                     damage: projectile.damage,
                 });
-                surface = ImpactSurface::Monster;
                 commands.entity(entity).despawn();
+                ImpactSurface::Monster
             } else {
-                surface = ImpactSurface::World;
-            }
+                ImpactSurface::World
+            };
             impact_event.send(BulletImpactEvent{pos: collision.collision_point, surface });
             
             // debug collision point

@@ -65,6 +65,9 @@ pub fn pulsation_controller(
         // collision check
         pulsating.pulse_time.tick(time.delta());
         if pulsating.pulse_time.finished() {
+            if !pulsating.pulse_time.repeating() && !pulsating.pulse_time.just_finished() {
+                continue;
+            }
             physics_world.intersections_with_shape(
                 &shape.into(),
                 transform.translation,

@@ -20,7 +20,7 @@ use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::enemies::*;
-use crate::game::environment::{*, door::*, medkit::*};
+use crate::game::environment::{*, door::*, medkit::*, barrel::*};
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
@@ -93,6 +93,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                         .after("pulses")
                         .after("enemy_controller"),
                 )
+                // animation
+                .with_system(explosive_objects_animation)
                 // interaction processing
                 .with_system(trigger_player_detection)
                 .with_system(trigger_interaction.label("trigger_interaction"))
@@ -103,7 +105,6 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(check_player_dead)
                 .with_system(door_interaction.after("trigger_interaction"))
                 .with_system(medkit_interaction.after("trigger_interaction"))
-                .with_system(explosive_objects_controller)
                 // spatial sound
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))
@@ -130,6 +131,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 pub struct GameAssets {
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
+    #[asset(key = "animation.explosion")]
+    pub explosion: Handle<Image>,
     #[asset(key = "audio.smg_shot")]
     pub smg_shot_audio: Handle<AudioSource>,
     #[asset(path = "audio/world_impacts", folder)]

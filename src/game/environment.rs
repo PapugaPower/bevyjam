@@ -1,6 +1,6 @@
 use crate::game::damage::{DamageAreaShape, Health, Pulsing};
-use crate::game::player::Player;
 use crate::game::phys_layers::PhysLayer;
+use crate::game::player::Player;
 use bevy::prelude::*;
 use heron::prelude::*;
 
@@ -23,18 +23,6 @@ pub struct TriggerTimeout {
     pub timeout: Timer,
 }
 
-#[derive(Debug, Component)]
-pub enum ExplosiveObjectState {
-    NotDetonated,
-    Exploding,
-    Detonated,
-}
-
-#[derive(Component)]
-pub struct ExplosiveObject {
-    pub state: ExplosiveObjectState,
-}
-
 #[derive(Default, Component, Reflect)]
 #[reflect(Component)]
 pub struct MultiUse {
@@ -48,7 +36,7 @@ pub fn trigger_player_detection(
 ) {
     let player = query_player.single();
     for event in collision_events.iter() {
-            match event {
+        match event {
             CollisionEvent::Started(e1, e2) => {
                 let trigger = if e1.rigid_body_entity() == player {
                     e2
@@ -99,30 +87,6 @@ pub fn trigger_interaction(
 pub fn triggir_timeout_process(time: Res<Time>, mut query_triggers: Query<&mut TriggerTimeout>) {
     for mut timeout in query_triggers.iter_mut() {
         timeout.timeout.tick(time.delta());
-    }
-}
-
-pub fn explosive_objects_controller(
-    mut commands: Commands,
-    mut query: Query<(Entity, &Health, &mut Pulsing, &mut ExplosiveObjectState)>,
-) {
-    for (entity, health, mut pulsing, mut state) in query.iter_mut() {
-        match *state {
-            ExplosiveObjectState::NotDetonated => {
-                if health.current <= 0.0 {
-                    *state = ExplosiveObjectState::Exploding;
-                    pulsing.pulse_time.unpause();
-                }
-            }
-            ExplosiveObjectState::Exploding => {
-                if pulsing.pulse_time.finished() {
-                    *state = ExplosiveObjectState::Detonated;
-                }
-            }
-            ExplosiveObjectState::Detonated => {
-                commands.entity(entity).despawn();
-            }
-        }
     }
 }
 
@@ -177,18 +141,18 @@ pub fn debug_environment_damage_zones(mut commands: Commands) {
             transform: Transform::from_translation(pos),
             ..Default::default()
         })
-        .insert(ExplosiveObjectState::NotDetonated)
+        .insert(barrel::ExplosiveObjectState::NotDetonated)
         .insert(Health {
             current: 100.0,
             max: 100.0,
         })
         .insert(Pulsing {
             pulse_time: {
-                let mut t = Timer::from_seconds(0.5, true);
+                let mut t = Timer::from_seconds(0.3, false);
                 t.pause();
                 t
             },
-            damage: 100.0,
+            damage: 10.0,
         })
         .insert(DamageAreaShape::Sphere { radius: 300.0 })
         .insert(RigidBody::Dynamic)
