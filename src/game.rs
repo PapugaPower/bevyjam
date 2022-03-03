@@ -1,11 +1,11 @@
 mod audio2d;
 mod crosshair;
-mod damage;
+pub(crate) mod damage;
 mod enemies;
 mod hints;
 mod main_camera;
-mod player;
-mod shooting;
+pub(crate) mod player;
+pub(crate) mod shooting;
 mod timer;
 mod environment;
 mod phys_layers;

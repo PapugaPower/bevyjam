@@ -9,6 +9,7 @@ mod ninepatches;
 
 pub mod gameover;
 pub mod mainmenu;
+pub mod hud;
 
 pub struct UiSetupPlugin;
 
@@ -64,6 +65,7 @@ pub struct UiConfig {
     pub btn_style_text: TextStyle,
     pub heading_style_text: TextStyle,
     pub dialog_style_text: TextStyle,
+    pub hud_resource_counter_style_text: TextStyle,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component, Reflect)]
@@ -193,6 +195,11 @@ fn init_uicfg(
             font: assets.font_menu_regular.clone(),
             font_size: 20.0,
             color: Color::BLACK,
+        },
+        hud_resource_counter_style_text: TextStyle {
+            font: assets.font_menu_bold.clone(),
+            font_size: 28.0,
+            color: Color::GRAY,
         },
     });
 }

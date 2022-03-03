@@ -3,9 +3,11 @@
 
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
+use game::shooting::*;
 
 use enum_iterator::IntoEnumIterator;
 use iyes_bevy_util::remove_resource;
+use crate::ui::hud::HudPlugin;
 
 mod editor;
 mod game;
@@ -96,6 +98,7 @@ fn main() {
 
     for mode in GameMode::into_enum_iter() {
         app.add_plugin(game::GamePlugin { state: AppState::InGame(mode) });
+        app.add_plugin(HudPlugin {state: AppState::InGame(mode)});
     }
 
     app.add_plugin(game::DevPlaygroundPlugin {

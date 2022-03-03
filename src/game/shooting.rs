@@ -309,14 +309,14 @@ pub fn gun_reload (
             } else {
                 fill = spare_ammo.current % deficit;
             }
-            mag.current = fill;
+            mag.current = mag.current + fill;
             spare_ammo.current = spare_ammo.current - fill;
         }
         return;
     }
     
     if keys.just_pressed(KeyCode::R){
-        if spare_ammo.current < 1 { return; }
+        if spare_ammo.current < 1 || mag.current == mag.max { return; }
         mag.current_reload += time.delta_seconds(); // add delta early, acts as a flog
     }
 }
