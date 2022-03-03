@@ -180,34 +180,8 @@ pub(super) fn spawn_ui(
         ..Default::default()
     }).id();
 
-    let dialog = cmd.spawn_bundle(NodeBundle {
-        color: UiColor(Color::NONE),
-        style: Style {
-            size: Size::new(Val::Auto, Val::Auto),
-            padding: Rect::all(Val::Px(4.0)),
-            flex_grow: 0.0,
-            flex_shrink: 1.0,
-            align_self: AlignSelf::Center,
-            flex_direction: FlexDirection::Row,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-            ..Default::default()
-        },
-        ..Default::default()
-    }).id();
-
-    let dialog_text = cmd.spawn_bundle(TextBundle {
-        text: Text::with_section(
-            "(left click)",
-        uicfg.dialog_style_text.clone(),
-            Default::default()
-        ),
-        ..Default::default()
-    }).id();
-
     cmd.entity(heading).push_children(&[heading_text]);
-    cmd.entity(dialog).push_children(&[dialog_text]);
-    cmd.entity(top).push_children(&[heading, dialog]);
+    cmd.entity(top).push_children(&[heading]);
 
     for tool in UsingTool::into_enum_iter() {
         let toolbtn = ToolBtn(tool);
