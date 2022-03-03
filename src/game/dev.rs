@@ -4,10 +4,7 @@ use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
-use crate::editor::NoEditor;
-use crate::editor::collider::EditableCollider;
 use crate::game::environment::debug_environment_damage_zones;
-use crate::{AppState, GameMode};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
 use crate::game::environment::door::debug_spawn_door;
@@ -101,7 +98,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         global_transform: Default::default(),
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),
-    }).insert(NoEditor);
+    });
 
     // big level
     let mut level_tform = Transform::from_xyz(3596.0, 0.0, -1.5);

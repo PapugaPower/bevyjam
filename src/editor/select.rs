@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use heron::CollisionShape;
 
-use crate::util::{WorldCursor, WorldCursorPrev};
+use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker};
 
-use super::{UsingTool, NoEditor, NewlySpawned, collider::EditableCollider};
+use super::{UsingTool, NewlySpawned, collider::EditableCollider};
 
 const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 
@@ -61,9 +61,9 @@ pub fn mouse_select(
         Option<&Handle<Image>>,
         Option<&EditableCollider>
     ), (
-        Without<NoEditor>,
         Without<NewlySpawned>,
         Without<Parent>,
+        With<SaveSceneMarker>,
         Or<(With<Sprite>, With<EditableCollider>)>
     )>,
     imgs: Res<Assets<Image>>,

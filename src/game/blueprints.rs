@@ -155,6 +155,7 @@ fn init_bp_medkit(
             // medkit
             commands
                 .entity(e)
+                .insert(crate::scene_exporter::SaveSceneMarker)
                 // hack to make spawning from editor work
                 .remove::<NewlySpawned>()
                 // sprite stuff
@@ -185,6 +186,7 @@ fn init_bp_collider(
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
+            .insert(crate::scene_exporter::SaveSceneMarker)
             // physics config
             .insert(GlobalTransform::default())
             .insert(RigidBody::Static)

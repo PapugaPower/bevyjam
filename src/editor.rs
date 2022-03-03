@@ -21,10 +21,6 @@ pub enum UsingTool {
     EditCollider,
 }
 
-/// Add to entities that should not be selectable with the editor
-#[derive(Component)]
-pub struct NoEditor;
-
 #[derive(Component)]
 struct EditorHideCleanup;
 
