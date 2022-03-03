@@ -46,7 +46,7 @@ pub struct GamePlugin<S: BevyState> {
 /// that is initialized when starting a new game
 /// and should be despawned when the game is over or restarted
 #[derive(Component)]
-struct GameCleanup;
+pub struct GameCleanup;
 
 impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {

@@ -1,12 +1,11 @@
-use bevy::asset::HandleId;
 use crate::game::crosshair::Crosshair;
-use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing};
+use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
+use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
 use heron::{prelude::*, rapier_plugin::PhysicsWorld};
-use crate::game::{GameAssets, GameAudioChannel};
 use rand::Rng;
 
 #[derive(Component)]
@@ -87,9 +86,12 @@ pub fn player_shoot(
                     weapon.spread / (weapon.projectiles_per_shot - 1) as f32,
                 )
             };
-            
-            ev_fired.send(PlayerFiredEvent{entity:e, ammo_type:weapon.ammo_type});
-            
+
+            ev_fired.send(PlayerFiredEvent {
+                entity: e,
+                ammo_type: weapon.ammo_type,
+            });
+
             for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
                     * Quat::from_rotation_z(spread_edge.to_radians() as f32)
@@ -130,12 +132,18 @@ pub fn player_shoot(
                             .insert(Armament {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
-                            .insert(Pulsing {
-                                pulse_time: Timer::from_seconds(weapon.projectile_life_time, false),
-                                damage: weapon.damage,
-                            })
-                            .insert(DamageAreaShape::Sphere {
-                                radius: weapon.radius_of_effect,
+                            .insert_bundle(PulsingBundle {
+                                pulsing: Pulsing {
+                                    pulse_time: Timer::from_seconds(
+                                        weapon.projectile_life_time,
+                                        false,
+                                    ),
+                                    damage: weapon.damage,
+                                },
+                                damage_area_shape: DamageAreaShape::Sphere {
+                                    radius: weapon.radius_of_effect,
+                                },
+                                ..Default::default()
                             })
                             .insert(RigidBody::Dynamic)
                             .insert(CollisionShape::Sphere { radius: 0.2 })
@@ -165,12 +173,15 @@ pub fn player_shoot(
                             .insert(Armament {
                                 life_time: Timer::from_seconds(weapon.projectile_life_time, false),
                             })
-                            .insert(Pulsing {
-                                pulse_time: Timer::from_seconds(weapon.projectile_speed, false),
-                                damage: weapon.damage,
-                            })
-                            .insert(DamageAreaShape::Sphere {
-                                radius: weapon.radius_of_effect,
+                            .insert_bundle(PulsingBundle {
+                                pulsing: Pulsing {
+                                    pulse_time: Timer::from_seconds(weapon.projectile_speed, false),
+                                    damage: weapon.damage,
+                                },
+                                damage_area_shape: DamageAreaShape::Sphere {
+                                    radius: weapon.radius_of_effect,
+                                },
+                                ..Default::default()
                             });
                     }
                 }
@@ -196,7 +207,8 @@ pub fn projectiles_controller(
         if let Some(collision) = ray_cast {
             let surface = if collision.entity == player_entity {
                 ImpactSurface::Player
-            } else if (collision.collision_point - transform.translation).length() <= bullet_travel {
+            } else if (collision.collision_point - transform.translation).length() <= bullet_travel
+            {
                 damage_event.send(DamageEvent {
                     entity: collision.entity,
                     source: DamageSource::Weapon,
@@ -207,8 +219,11 @@ pub fn projectiles_controller(
             } else {
                 ImpactSurface::World
             };
-            impact_event.send(BulletImpactEvent{pos: collision.collision_point, surface });
-            
+            impact_event.send(BulletImpactEvent {
+                pos: collision.collision_point,
+                surface,
+            });
+
             // debug collision point
             // commands.spawn_bundle(SpriteBundle {
             //     sprite: Sprite {
@@ -238,33 +253,32 @@ pub fn armaments_despawn(
     }
 }
 
-pub fn handle_shot_audio(audio: Res<Audio>,
-                         channel: Res<GameAudioChannel>, 
-                         assets: Res<GameAssets>,
-                         mut ev_fired: EventReader<PlayerFiredEvent>){
+pub fn handle_shot_audio(
+    audio: Res<Audio>,
+    channel: Res<GameAudioChannel>,
+    assets: Res<GameAssets>,
+    mut ev_fired: EventReader<PlayerFiredEvent>,
+) {
     for ev in ev_fired.iter() {
         match ev.ammo_type {
             AmmoType::Projectile => {
-                audio.play_in_channel(
-                    assets.smg_shot_audio.clone(),
-                    &channel.0,
-                );
-            },
-            AmmoType::Throwable => {
-            },
-            AmmoType::Static => {
+                audio.play_in_channel(assets.smg_shot_audio.clone(), &channel.0);
             }
-        }}
+            AmmoType::Throwable => {}
+            AmmoType::Static => {}
+        }
+    }
 }
 
-pub fn handle_impact_audio(assets: Res<GameAssets>,
-                           audio: Res<Audio>,
-                           channel: Res<GameAudioChannel>,
-                           mut commands: Commands,
-                           mut event: EventReader<BulletImpactEvent>){
+pub fn handle_impact_audio(
+    assets: Res<GameAssets>,
+    audio: Res<Audio>,
+    channel: Res<GameAudioChannel>,
+    mut commands: Commands,
+    mut event: EventReader<BulletImpactEvent>,
+) {
     for ev in event.iter() {
-        
-        let mut untyped_audio:HandleUntyped;
+        let mut untyped_audio: HandleUntyped;
         let mut rng = rand::thread_rng();
         match ev.surface {
             ImpactSurface::World => {
@@ -272,59 +286,56 @@ pub fn handle_impact_audio(assets: Res<GameAssets>,
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.world_impacts.clone();
                 untyped_audio = assets.world_impacts[idx].clone();
-            },
+            }
             ImpactSurface::Monster => {
                 let max = assets.monster_impacts.len();
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.monster_impacts.copy();
                 untyped_audio = assets.monster_impacts[idx].clone();
-            },
-            ImpactSurface::Player => { // TODO: change to proper sounds
+            }
+            ImpactSurface::Player => {
+                // TODO: change to proper sounds
                 let max = assets.monster_impacts.len();
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.monster_impacts.copy();
                 untyped_audio = assets.monster_impacts[idx].clone();
             }
         }
-        
-        let clip:Handle<AudioSource> = Handle::weak(untyped_audio.id);
-        audio.play_in_channel(
-            clip,
-            &channel.0,
-        );
-        
+
+        let clip: Handle<AudioSource> = Handle::weak(untyped_audio.id);
+        audio.play_in_channel(clip, &channel.0);
+
         /*commands
-            .spawn()
-            .insert(Transform::from_translation(ev.pos))
-            .insert({
-                let mut a = super::SpatialAudio::default();
-                a.source = clip.clone();
-                a.set_looping(false);
-                a.playback_rate = 1.0;
-                a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
-                a.max_volume = 0.85;
-                a
-            });*/
+        .spawn()
+        .insert(Transform::from_translation(ev.pos))
+        .insert({
+            let mut a = super::SpatialAudio::default();
+            a.source = clip.clone();
+            a.set_looping(false);
+            a.playback_rate = 1.0;
+            a.attenuation = super::Attenuation::InverseSquareDistance(40.0);
+            a.max_volume = 0.85;
+            a
+        });*/
         return; // exit after first iteration to reduce audio spam
     }
-    
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct PlayerFiredEvent {
-    pub entity:Entity,
-    pub ammo_type:AmmoType
+    pub entity: Entity,
+    pub ammo_type: AmmoType,
 }
 
 pub struct BulletImpactEvent {
-    pub pos:Vec3,
-    pub surface:ImpactSurface,
+    pub pos: Vec3,
+    pub surface: ImpactSurface,
 }
 
 pub enum ImpactSurface {
     World,
     Monster,
-    Player
+    Player,
 }
 
 // pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {

@@ -1,4 +1,4 @@
-use crate::game::damage::{DamageAreaShape, Health, Pulsing};
+use crate::game::damage::{DamageAreaShape, Health, Pulsing, PulsingBundle};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use bevy::prelude::*;
@@ -103,11 +103,14 @@ pub fn debug_environment_damage_zones(mut commands: Commands) {
             transform: Transform::from_translation(pos),
             ..Default::default()
         })
-        .insert(Pulsing {
-            pulse_time: Timer::from_seconds(0.5, true),
-            damage: 15.0,
-        })
-        .insert(DamageAreaShape::Sphere { radius: 50.0 });
+        .insert_bundle(PulsingBundle {
+            pulsing: Pulsing {
+                pulse_time: Timer::from_seconds(0.5, true),
+                damage: 15.0,
+            },
+            damage_area_shape: DamageAreaShape::Sphere { radius: 50.0 },
+            ..Default::default()
+        });
 
     // damage zone 2
     let pos = Vec3::new(150.0, 250.0, 0.0);
@@ -121,12 +124,15 @@ pub fn debug_environment_damage_zones(mut commands: Commands) {
             transform: Transform::from_translation(pos),
             ..Default::default()
         })
-        .insert(Pulsing {
-            pulse_time: Timer::from_seconds(0.2, true),
-            damage: 1.0,
-        })
-        .insert(DamageAreaShape::Cuboid {
-            half_extends: Vec3::new(100., 50., 1.),
+        .insert_bundle(PulsingBundle {
+            pulsing: Pulsing {
+                pulse_time: Timer::from_seconds(0.2, true),
+                damage: 1.0,
+            },
+            damage_area_shape: DamageAreaShape::Cuboid {
+                half_extends: Vec3::new(100., 50., 1.),
+            },
+            ..Default::default()
         });
 
     // explosive barrel
@@ -146,15 +152,18 @@ pub fn debug_environment_damage_zones(mut commands: Commands) {
             current: 100.0,
             max: 100.0,
         })
-        .insert(Pulsing {
-            pulse_time: {
-                let mut t = Timer::from_seconds(0.3, false);
-                t.pause();
-                t
+        .insert_bundle(PulsingBundle {
+            pulsing: Pulsing {
+                pulse_time: {
+                    let mut t = Timer::from_seconds(0.3, false);
+                    t.pause();
+                    t
+                },
+                damage: 10.0,
             },
-            damage: 10.0,
+            damage_area_shape: DamageAreaShape::Sphere { radius: 300.0 },
+            ..Default::default()
         })
-        .insert(DamageAreaShape::Sphere { radius: 300.0 })
         .insert(RigidBody::Dynamic)
         .insert(CollisionShape::Sphere { radius: 50.0 })
         .insert(

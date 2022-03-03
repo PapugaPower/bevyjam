@@ -55,6 +55,27 @@ impl From<&DamageAreaShape> for CollisionShape {
     }
 }
 
+#[derive(Bundle)]
+pub struct PulsingBundle {
+    pub pulsing: Pulsing,
+    pub damage_area_shape: DamageAreaShape,
+    // cleanup marker
+    pub cleanup: super::GameCleanup,
+}
+
+impl Default for PulsingBundle {
+    fn default() -> Self {
+        Self {
+            pulsing: Pulsing {
+                pulse_time: Timer::from_seconds(1.0, true),
+                damage: 10.0,
+            },
+            damage_area_shape: DamageAreaShape::Sphere { radius: 10.0 },
+            cleanup: super::GameCleanup,
+        }
+    }
+}
+
 pub fn pulsation_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
