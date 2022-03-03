@@ -44,7 +44,7 @@ pub(super) fn mouse_move_newlyspawned(
     crs: Res<WorldCursor>,
     crs_old: Res<WorldCursorPrev>,
     mut q_tgt: Query<(Entity, &mut Transform), With<NewlySpawned>>,
-    mut btn: ResMut<Input<MouseButton>>,
+    btn: Res<Input<MouseButton>>,
     mut commands: Commands,
     mut toolstate: ResMut<State<ToolState>>,
     tool: Res<UsingTool>,
