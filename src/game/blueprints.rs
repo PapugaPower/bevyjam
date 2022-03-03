@@ -19,6 +19,7 @@ use heron::*;
 
 use crate::FuckStages;
 use crate::editor::NewlySpawned;
+use crate::editor::collider::EditableCollider;
 
 use super::GameAssets;
 
@@ -40,11 +41,14 @@ impl Plugin for BlueprintsPlugin {
         // registration: add our own types that should be exported to scenes:
         app.register_type::<Medkit>();
         app.register_type::<MultiUse>();
+        app.register_type::<EditableCollider>();
         app.add_startup_system(add_blueprint_meta);
         //
         app.add_system_set_to_stage(
             FuckStages::Post,
-            SystemSet::new().with_system(init_bp_medkit),
+            SystemSet::new()
+                .with_system(init_bp_medkit)
+                .with_system(init_bp_collider)
         );
     }
 }
@@ -70,6 +74,7 @@ fn add_blueprint_meta(mut commands: Commands) {
     names.insert("Transform");
     names.insert("Medkit");
     names.insert("MultiUse");
+    names.insert("EditableCollider");
     commands.insert_resource(ExportableTypes { names });
 }
 
@@ -146,24 +151,21 @@ fn init_bp_medkit(
 
 // COLLIDERS
 
-/*
-#[derive(Default, Clone, Component, Reflect)]
-#[reflect(Component)]
-pub struct Collider;
-
-impl Blueprint for Collider {
+impl Blueprint for EditableCollider {
     const EDITOR_ID: &'static str = "Collider";
     const DEFAULT_Z: f32 = 0.0;
 }
 
 fn init_bp_collider(
     mut commands: Commands,
-    q_bp: BlueprintQuery<Collider>,
-    assets: Option<Res<GameAssets>>,
+    q_bp: BlueprintQuery<EditableCollider>,
 ) {
-    if let Some(assets) = assets {
-        for (e, xf) in q_bp.query.iter() {
-        }
+    for (e, _) in q_bp.query.iter() {
+        commands.entity(e)
+            .insert(GlobalTransform::default())
+            .insert(RigidBody::Static)
+            .insert(CollisionLayers::none()
+                .with_group(PhysLayer::World)
+                .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]));
     }
 }
-*/

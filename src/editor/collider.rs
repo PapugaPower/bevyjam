@@ -5,9 +5,18 @@ use crate::util::{WorldCursor, WorldCursorPrev};
 
 use super::select::Selection;
 
-#[derive(Component)]
+#[derive(Component, Clone, Reflect)]
+#[reflect(Component)]
 pub struct EditableCollider {
     pub half_extends: Vec2,
+}
+
+impl Default for EditableCollider {
+    fn default() -> Self {
+        EditableCollider {
+            half_extends: Vec2::new(40., 30.),
+        }
+    }
 }
 
 #[derive(Component)]

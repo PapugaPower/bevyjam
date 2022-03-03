@@ -95,23 +95,13 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     let width = 945.0;
     let height = 25.0;
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(-25.5, 355.0, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // bot
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(-25.5, -85.0, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
@@ -119,23 +109,13 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     let width = 20.0;
     let height = 130.0;
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(-488.0, 280.0, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // letf bot
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(-488.0, -7.5, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
@@ -143,23 +123,13 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
     let width = 20.0;
     let height = 130.0;
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(437.0, 280.0, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // right bot
     commands.spawn()
-        .insert(GlobalTransform::default())
         .insert(Transform::from_xyz(437.0, -7.5, 0.0))
-        .insert(RigidBody::Static)
-        .insert(CollisionLayers::none()
-            .with_group(PhysLayer::World)
-            .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
         .insert(EditableCollider {
             half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
