@@ -55,18 +55,31 @@ pub struct Projectile {
     direction: Vec3,
     speed: f32,
 }
+#[derive(Component)]
+pub struct GunMagazine {
+    pub current: i32,
+    pub max: i32,
+    pub reload_time: f32,
+    pub current_reload: f32
+}
+
+#[derive(Component)]
+pub struct SpareAmmo {
+    pub current: i32
+}
 
 pub fn player_shoot(
     mut commands: Commands,
     mut ev_fired: EventWriter<PlayerFiredEvent>,
     time: Res<Time>,
-    keys: Res<Input<KeyCode>>,
-    mut query_player: Query<(Entity, &Transform, &Weapon, &mut LastShootTime, &mut ShootingAnimationState), With<Player>>,
+    keys: Res<Input<MouseButton>>,
+    mut query_player: Query<(Entity, &Transform, &Weapon, &mut LastShootTime, &mut ShootingAnimationState, &mut GunMagazine), With<Player>>,
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
     // TODO handle input
-    if keys.pressed(KeyCode::Space) {
-        let (e, player_transform, weapon, mut last_shoot, mut animation_state) = query_player.single_mut();
+    if keys.pressed(MouseButton::Left) {
+        let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) = query_player.single_mut();
+        if mag.current < 1 || mag.current_reload > 0.0 { return; } // return if out of ammo or reloading
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let spawn_transform = {
@@ -95,6 +108,9 @@ pub fn player_shoot(
                     weapon.spread / (weapon.projectiles_per_shot - 1) as f32,
                 )
             };
+            
+            // reduce current ammo in mag
+            mag.current = mag.current - 1;
 
             for i in 0..weapon.projectiles_per_shot {
                 let shoot_dir = Quat::from_rotation_z((spread_step * i as f32).to_radians())
@@ -271,6 +287,37 @@ pub fn handle_shot_audio(
             AmmoType::Throwable => {}
             AmmoType::Static => {}
         }
+    }
+}
+
+pub fn gun_reload (
+    time: Res<Time>, 
+    keys: Res<Input<KeyCode>>,
+    mut q: Query<(&mut GunMagazine, &mut SpareAmmo), With<Player>>
+){
+    let (mut mag, mut spare_ammo) = q.single_mut();
+    
+    // If a reload is in progress, try to complete it.
+    if mag.current_reload > 0.0 {
+        mag.current_reload += time.delta_seconds();
+        if mag.current_reload > mag.reload_time {
+            mag.current_reload = 0.0;
+            let mut fill = 0;
+            let deficit = mag.max - mag.current;
+            if spare_ammo.current >= deficit {
+                fill = deficit;
+            } else {
+                fill = spare_ammo.current % deficit;
+            }
+            mag.current = fill;
+            spare_ammo.current = spare_ammo.current - fill;
+        }
+        return;
+    }
+    
+    if keys.just_pressed(KeyCode::R){
+        if spare_ammo.current < 1 { return; }
+        mag.current_reload += time.delta_seconds(); // add delta early, acts as a flog
     }
 }
 

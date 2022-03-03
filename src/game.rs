@@ -85,6 +85,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(player_shoot.label("player_shoot"))
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(armaments_despawn)
+                .with_system(gun_reload)
                 .with_system(handle_shot_audio.after("player_shoot"))
                 .with_system(handle_impact_audio)
                 // damage 

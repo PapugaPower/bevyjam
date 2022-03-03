@@ -3,7 +3,7 @@ use crate::game::crosshair::Crosshair;
 use crate::game::damage::Health;
 use crate::game::enemies::EnemyWave;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::shooting::{AmmoType, LastShootTime, Weapon};
+use crate::game::shooting::{AmmoType, GunMagazine, LastShootTime, SpareAmmo, Weapon};
 use crate::util::WorldCursor;
 use crate::AppState;
 use bevy::prelude::*;
@@ -65,6 +65,8 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
                 projectile_spawn_offset: 50.0,
                 radius_of_effect: 100.0,
             })
+            .insert(SpareAmmo{ current: 40})
+            .insert(GunMagazine{ current: 14, max: 20, reload_time: 2.0, current_reload: 0.0 })
             .insert(LastShootTime { time: 0.0 })
             .insert(ShootingAnimationState::NotShooting)
             .insert(ShootingAnimationTimer {
