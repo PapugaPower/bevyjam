@@ -34,11 +34,12 @@ pub struct ShootingAnimationTimer {
 
 pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
     if let Some(assets) = assets {
-        let player_transform = Transform::default();
+        let player_transform = Transform::from_translation(
+            Vec3::new(-2982.9265, 1052.7454, 0.0));
         let _x = commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
-                    custom_size: Some(Vec2::new(48.0, 48.0)),
+                    custom_size: Some(Vec2::new(64.0, 64.0)),
                     ..Default::default()
                 },
 
@@ -84,6 +85,14 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
             )
             .insert(CollisionShape::Sphere { radius: 24.0 })
             .insert(SpatialAudioReceptor);
+    }
+}
+
+pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input<KeyCode>>)
+{
+    if keys.just_pressed(KeyCode::P) {
+        let t = q.single();
+        println!("Current player position: {}", t.translation.to_string());
     }
 }
 

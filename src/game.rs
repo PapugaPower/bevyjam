@@ -64,7 +64,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_enter(self.state.clone())
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
-                .with_system(init_player)
+                .with_system(init_player).label("init_player")
                 .with_system(init_hints)
                 .with_system(set_cursor_visibility::<false>),
         );
@@ -76,6 +76,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(recalculate_camera_desination_system)
                 .with_system(refresh_camera_position_system)
                 .with_system(transfer_input_to_player_system)
+                .with_system(print_player_position)
                 // enemies
                 .with_system(enemy_controller.label("enemy_controller"))
                 .with_system(enemy_spawn)
