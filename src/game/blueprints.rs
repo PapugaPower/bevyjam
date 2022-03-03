@@ -1,17 +1,19 @@
+//! # HOW TO ADD A NEW BLUEPRINT TYPE
+//!
+//! - have a unique marker component type
+//! - `impl Blueprint for MyMarker {}`
+//!   - fill it out with the info for the editor
+//! - register it in `BlueprintsPlugin`
+//! - insert it in `add_blueprint_meta`
+//! - create new init function
+//!   (you can copypaste `init_bp_collider` as a template)
+//!   - use your new marker, in the `BlueprintQuery` param
+//!   - in the body, insert whatever components you want
+//!   - be sure to preserve the transform
+//!
+
 #![allow(unused_imports)]
 
-/// # HOW TO ADD A NEW BLUEPRINT TYPE
-///
-/// - have a unique marker component type
-/// - `impl Blueprint for MyMarker {}`
-/// - register it in `BlueprintsPlugin`
-/// - insert it in `add_blueprint_meta`
-/// - create new init function
-///   (you can copypaste `init_bp_medkit` as a template)
-///   - use your new marker, in the `BlueprintQuery` param
-///   - in the body, insert whatever components you want
-///   - be sure to preserve the transform
-///
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
@@ -53,16 +55,16 @@ impl Plugin for BlueprintsPlugin {
     }
 }
 
+/// impl this Trait for a marker type to enable using it with the editor
 pub trait Blueprint: Component + Reflect + Default + Clone {
+    /// Text for the spawn button in the editor ui
     const EDITOR_ID: &'static str;
+    /// Z coordinate to spawn at
     const DEFAULT_Z: f32;
 
+    /// The bundle to use when spawning from the editor
+    /// The editor will spawn the new entity with a default instance of this bundle
     type BlueprintBundle: Bundle + Default;
-}
-
-#[derive(SystemParam)]
-struct BlueprintQuery<'w, 's, T: Blueprint> {
-    query: Query<'w, 's, (Entity, &'static Transform), Added<T>>,
 }
 
 /// List of types that may be serialized by the scene exporter
@@ -80,10 +82,16 @@ fn add_blueprint_meta(mut commands: Commands) {
     commands.insert_resource(ExportableTypes { names });
 }
 
+/// Simple generic blueprint bundle, if you only want to initialize with a transform and marker
 #[derive(Bundle, Default)]
 pub struct BasicBlueprintBundle<T: Blueprint> {
     pub transform: Transform,
     pub marker: T,
+}
+
+#[derive(SystemParam)]
+struct BlueprintQuery<'w, 's, T: Blueprint> {
+    query: Query<'w, 's, (Entity, &'static Transform), Added<T>>,
 }
 
 // MEDKITS
