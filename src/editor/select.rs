@@ -73,12 +73,12 @@ pub fn mouse_select(
         &GlobalTransform,
         Option<&Sprite>,
         Option<&Handle<Image>>,
-        Option<&EditableCollider>
+        Option<&CollisionShape>
     ), (
         Without<NewlySpawned>,
         Without<Parent>,
         With<Editable>,
-        Or<(With<Sprite>, With<EditableCollider>)>
+        Or<(With<Sprite>, With<CollisionShape>)>
     )>,
     imgs: Res<Assets<Image>>,
     mut cmd: Commands,
@@ -87,15 +87,17 @@ pub fn mouse_select(
     if btn.just_pressed(MouseButton::Left) {
         btn.clear_just_pressed(MouseButton::Left);
         let mut best = None;
-        for (e, xf, spr, h_img, edit) in q.iter() {
+        for (e, xf, spr, h_img, shape) in q.iter() {
             //dbg!(best);
             let minv = xf.compute_matrix().inverse();
             let pos_model = minv.transform_point3(crs.0.extend(xf.translation.z));
             //dbg!(pos_model);
 
-            let spr_sz = if let Some(edit) = edit {
-                //dbg!(half_extends);
-                edit.half_extends
+            let spr_sz = if let Some(shape) = shape {
+                match shape {
+                    CollisionShape::Cuboid { half_extends, .. } => half_extends.truncate(),
+                    _ => continue,
+                }
             } else if let Some(spr) = spr {
                 spr.custom_size
                     .or_else(|| {
@@ -165,12 +167,22 @@ pub fn selection_track_target(
 }
 
 pub fn selection_track_collider(
-    mut q_sel: Query<(&mut Sprite, &Selection)>,
-    q_tgt: Query<&EditableCollider>,
+    mut cmd: Commands,
+    mut sels: ResMut<Selections>,
+    mut q_sel: Query<(Entity, &mut Sprite, &Selection)>,
+    q_tgt: Query<&CollisionShape>,
 ) {
-    for (mut spr, sel) in q_sel.iter_mut() {
-        if let Ok(edit) = q_tgt.get(sel.0) {
-            spr.custom_size = Some(edit.half_extends * 2.0);
+    for (e, mut spr, sel) in q_sel.iter_mut() {
+        if let Ok(shape) = q_tgt.get(sel.0) {
+            match shape {
+                CollisionShape::Cuboid { half_extends, .. } => {
+                    spr.custom_size = Some(half_extends.truncate() * 2.0);
+                }
+                _ => {
+                    cmd.entity(e).despawn_recursive();
+                    sels.0.remove(&sel.0);
+                }
+            }
         }
     }
 }
