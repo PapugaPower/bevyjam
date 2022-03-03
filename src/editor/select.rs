@@ -149,3 +149,14 @@ pub fn selection_track_target(
         }
     }
 }
+
+pub fn selection_track_collider(
+    mut q_sel: Query<(&mut Sprite, &Selection)>,
+    q_tgt: Query<&EditableCollider>,
+) {
+    for (mut spr, sel) in q_sel.iter_mut() {
+        if let Ok(edit) = q_tgt.get(sel.0) {
+            spr.custom_size = Some(edit.half_extends * 2.0);
+        }
+    }
+}

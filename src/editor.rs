@@ -4,6 +4,8 @@ use iyes_bevy_util::{despawn_with_recursive, despawn_with};
 
 use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::Medkit};
 
+use self::collider::DragHandle;
+
 mod ui;
 
 mod select;
@@ -16,6 +18,7 @@ pub enum UsingTool {
     Select,
     Move,
     Rotate,
+    EditCollider,
 }
 
 /// Add to entities that should not be selectable with the editor
@@ -36,10 +39,14 @@ impl Plugin for DevEditorPlugin {
         app.init_resource::<ui::SpawnBtnParent>();
         app.insert_resource(UsingTool::Select);
         app.add_system(enter_exit_editor);
-        app.add_system_to_stage(
+        app.add_system_set_to_stage(
             CoreStage::PostUpdate,
-            select::selection_track_target
-                .after(bevy::transform::TransformSystem::TransformPropagate)
+            SystemSet::new()
+                .with_system(select::selection_track_collider)
+                .with_system(select::selection_track_target
+                    .after(bevy::transform::TransformSystem::TransformPropagate))
+                .with_system(collider::draghandles_track_collider
+                    .before(bevy::transform::TransformSystem::TransformPropagate))
         );
         app.add_system_to_stage(FuckStages::Pre, collider::collider_apply_sync);
         app.add_system_set(
@@ -69,6 +76,21 @@ impl Plugin for DevEditorPlugin {
             ToolStage,
             SystemSet::on_update(ToolState::Using(UsingTool::Rotate))
                 .with_system(transform::mouse_rotate_selections)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_enter(ToolState::Using(UsingTool::EditCollider))
+                .with_system(collider::spawn_draghandles)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_update(ToolState::Using(UsingTool::EditCollider))
+                .with_system(collider::mouse_edit_collider)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_exit(ToolState::Using(UsingTool::EditCollider))
+                .with_system(despawn_with::<DragHandle>)
         );
         app.add_system_set_to_stage(
             ToolStage,
