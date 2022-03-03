@@ -9,6 +9,8 @@ use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
 use crate::game::environment::door::debug_spawn_door;
 
+use super::GameCleanup;
+
 /// This plugin should add all DevPlayground specific stuff
 pub struct DevPlaygroundPlugin<S: BevyState + Copy> {
     pub loading_state: S,
@@ -80,6 +82,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             transform: Transform::from_translation(Vec3::new(0.0, 100.0, 0.0)),
             ..Default::default()
         })
+        .insert(GameCleanup)
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::Enemies)
             .with_masks(&[PhysLayer::World, PhysLayer::Enemies, PhysLayer::Bullets]))
@@ -96,7 +99,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         global_transform: Default::default(),
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),
-    });
+    }).insert(GameCleanup);
 
 
     return;

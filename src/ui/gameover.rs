@@ -168,7 +168,7 @@ impl Btn for btn::ReplayGame {
             gm: Res<GameMode>,
         ) {
             if clicked.is_some() {
-                state.replace(AppState::InGame(*gm));
+                state.replace(AppState::InGame(*gm)).ok();
             }
         }
         sset.with_system(
@@ -188,7 +188,7 @@ impl Btn for btn::GotoMenu {
             mut state: ResMut<State<AppState>>,
         ) {
             if clicked.is_some() {
-                state.replace(AppState::MainMenu);
+                state.replace(AppState::MainMenu).ok();
             }
         }
         sset.with_system(

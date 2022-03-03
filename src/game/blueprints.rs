@@ -25,6 +25,7 @@ use crate::editor::NewlySpawned;
 use crate::editor::collider::EditableCollider;
 
 use super::GameAssets;
+use super::GameCleanup;
 
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
@@ -132,6 +133,7 @@ fn init_bp_medkit(
             // trigger for medkit
             commands
                 .spawn()
+                .insert(GameCleanup)
                 .insert(Editable)
                 .insert(GlobalTransform::default())
                 .insert(*xf)
@@ -188,6 +190,7 @@ fn init_bp_collider(
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
+            .insert(GameCleanup)
             // editor integration
             .insert(Editable)
             .insert(crate::scene_exporter::SaveSceneMarker)

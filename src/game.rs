@@ -16,6 +16,7 @@ use bevy_kira_audio::{AudioChannel, AudioSource};
 use heron::RigidBody;
 use iyes_bevy_util::*;
 
+use crate::AppState;
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
@@ -69,6 +70,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         );
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
+                .with_system(exit_game_on_esc)
                 // player movement
                 .with_system(crosshair_position_update_system)
                 .with_system(recalculate_camera_desination_system)
@@ -155,6 +157,17 @@ pub enum GameResult {
     LoseHealth,
     /// Player ran out of time
     LoseTime,
+}
+
+/// exit to main menu on pressing Esc
+/// FIXME: temporary until we have a menu
+fn exit_game_on_esc(
+    kbd: Res<Input<KeyCode>>,
+    mut state: ResMut<State<AppState>>,
+) {
+    if kbd.just_pressed(KeyCode::Escape) {
+        state.replace(AppState::MainMenu).ok();
+    }
 }
 
 fn set_cursor_visibility<const VIS: bool>(mut wnds: ResMut<Windows>) {

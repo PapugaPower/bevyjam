@@ -7,6 +7,8 @@ use crate::game::GameAssets;
 
 use crate::game::timer::GameTimer;
 
+use super::GameCleanup;
+
 /// This plugin should add all Scenario1 specific stuff
 pub struct Scenario1Plugin<S: BevyState + Copy> {
     pub loading_state: S,
@@ -74,5 +76,5 @@ fn load_game_map(
         global_transform: Default::default(),
         texture: assets.map_level_0.clone(),
         visibility: Default::default(),
-    });
+    }).insert(GameCleanup);
 }
