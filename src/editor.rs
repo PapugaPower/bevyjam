@@ -110,6 +110,7 @@ impl Plugin for DevEditorPlugin {
                 .with_system(collider::visualize_spriteless_colliders)
                 .with_system(collider::update_collider_visualization)
                 .with_system(transform::editor_camera)
+                .with_system(transform::editor_camera_zoom)
                 .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 // handle spawn buttons for blueprints:
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::Wall>))

@@ -136,7 +136,6 @@ pub fn mouse_select_draghandle(
     if btn.just_released(MouseButton::Left) {
         dh_active.0 = None;
     }
-    dbg!(dh_active.0);
 }
 
 pub fn mouse_drag_handle(

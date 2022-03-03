@@ -1,4 +1,4 @@
-use bevy::{prelude::*, math::Vec3Swizzles, input::mouse::MouseMotion};
+use bevy::{prelude::*, math::Vec3Swizzles, input::mouse::{MouseMotion, MouseWheel, MouseScrollUnit}};
 
 use crate::util::{WorldCursor, WorldCursorPrev, MainCamera};
 
@@ -15,8 +15,23 @@ pub fn editor_camera(
         for ev in evr_motion.iter() {
             delta += ev.delta;
         }
+        delta *= xf.scale.truncate();
         xf.translation.x -= delta.x;
         xf.translation.y += delta.y;
+    }
+}
+
+pub fn editor_camera_zoom(
+    mut q_cam: Query<&mut Transform, With<MainCamera>>,
+    mut evr_motion: EventReader<MouseWheel>,
+) {
+    for ev in evr_motion.iter() {
+        let mut xf = q_cam.single_mut();
+        if ev.y > 0.0 {
+            xf.scale *= 1.25;
+        } else if ev.y < 0.0 {
+            xf.scale *= 0.75;
+        }
     }
 }
 
