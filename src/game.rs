@@ -129,6 +129,10 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 
 #[derive(AssetCollection)]
 pub struct GameAssets {
+    #[asset(key = "player.idle")]
+    pub player_idle: Handle<Image>,
+    #[asset(key = "player.shooting")]
+    pub player_shooting: Handle<Image>,
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
     #[asset(key = "animation.explosion")]

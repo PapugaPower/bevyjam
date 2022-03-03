@@ -101,7 +101,7 @@ pub fn player_shoot(
                         commands
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
-                                    custom_size: Some(Vec2::new(0.4, 0.06)),
+                                    custom_size: Some(Vec2::new(20.0, 3.0)),
                                     color: Color::rgba(1.0, 0.8, 0.8, 0.5),
                                     ..Default::default()
                                 },
@@ -122,7 +122,7 @@ pub fn player_shoot(
                         commands
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
-                                    custom_size: Some(Vec2::new(0.4, 0.4)),
+                                    custom_size: Some(Vec2::new(20.0, 20.0)),
                                     color: Color::rgb(0.9, 0.9, 0.2),
                                     ..Default::default()
                                 },
@@ -146,7 +146,7 @@ pub fn player_shoot(
                                 ..Default::default()
                             })
                             .insert(RigidBody::Dynamic)
-                            .insert(CollisionShape::Sphere { radius: 0.2 })
+                            .insert(CollisionShape::Sphere { radius: 10.0 })
                             .insert(Velocity::from_linear(throw_dir))
                             .insert(PhysicMaterial {
                                 friction: 1.0,
@@ -163,7 +163,7 @@ pub fn player_shoot(
                         commands
                             .spawn_bundle(SpriteBundle {
                                 sprite: Sprite {
-                                    custom_size: Some(Vec2::new(0.5, 0.5)),
+                                    custom_size: Some(Vec2::new(25.0, 25.0)),
                                     color: Color::rgb(0.2, 0.5, 0.9),
                                     ..Default::default()
                                 },
