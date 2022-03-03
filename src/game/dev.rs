@@ -5,6 +5,7 @@ use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
 use crate::editor::NoEditor;
+use crate::editor::collider::EditableCollider;
 use crate::game::environment::debug_environment_damage_zones;
 use crate::{AppState, GameMode};
 use crate::game::phys_layers::PhysLayer;
@@ -100,9 +101,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // bot
     commands.spawn()
@@ -112,9 +112,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // letf top
     let width = 20.0;
@@ -126,9 +125,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // letf bot
     commands.spawn()
@@ -138,9 +136,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // right top
     let width = 20.0;
@@ -152,9 +149,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
     // right bot
     commands.spawn()
@@ -164,9 +160,8 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(CollisionLayers::none()
             .with_group(PhysLayer::World)
             .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]))
-        .insert(CollisionShape::Cuboid {
-            half_extends: Vec3::new(width / 2.0, height / 2.0, 0.1),
-            border_radius: None,
+        .insert(EditableCollider {
+            half_extends: Vec2::new(width / 2.0, height / 2.0),
         });
 
     // background

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
-use iyes_bevy_util::despawn_with_recursive;
+use iyes_bevy_util::{despawn_with_recursive, despawn_with};
 
 use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::Medkit};
 
@@ -8,7 +8,7 @@ mod ui;
 
 mod select;
 mod transform;
-//mod spawn;
+pub mod collider;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
 #[derive(IntoEnumIterator)]
@@ -41,6 +41,7 @@ impl Plugin for DevEditorPlugin {
             select::selection_track_target
                 .after(bevy::transform::TransformSystem::TransformPropagate)
         );
+        app.add_system_to_stage(FuckStages::Pre, collider::collider_apply_sync);
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)
                 .with_system(ui::spawn_ui.label("editorui"))
@@ -50,7 +51,7 @@ impl Plugin for DevEditorPlugin {
             SystemSet::on_exit(AppState::DevEditor)
                 .with_system(despawn_with_recursive::<EditorHideCleanup>)
                 .with_system(select::set_selection_visibility::<false>)
-                .with_system(select::cleanup_collider_visualizations)
+                .with_system(collider::cleanup_collider_visualizations)
         );
         app.add_stage_after(CoreStage::Update, ToolStage, SystemStage::single_threaded());
         app.add_state_to_stage(ToolStage, ToolState::Inactive);
@@ -78,8 +79,8 @@ impl Plugin for DevEditorPlugin {
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::keyboard_despawn_selected)
-                .with_system(select::visualize_spriteless_colliders)
-                .with_system(select::update_collider_visualization)
+                .with_system(collider::visualize_spriteless_colliders)
+                .with_system(collider::update_collider_visualization)
                 .with_system(transform::editor_camera)
                 .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 // handle spawn buttons for blueprints:

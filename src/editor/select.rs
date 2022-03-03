@@ -2,9 +2,9 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use heron::CollisionShape;
 
-use crate::util::WorldCursor;
+use crate::util::{WorldCursor, WorldCursorPrev};
 
-use super::{UsingTool, NoEditor, NewlySpawned};
+use super::{UsingTool, NoEditor, NewlySpawned, collider::EditableCollider};
 
 const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 
@@ -59,12 +59,12 @@ pub fn mouse_select(
         &GlobalTransform,
         Option<&Sprite>,
         Option<&Handle<Image>>,
-        Option<&CollisionShape>
+        Option<&EditableCollider>
     ), (
         Without<NoEditor>,
         Without<NewlySpawned>,
         Without<Parent>,
-        Or<(With<Sprite>, With<CollisionShape>)>
+        Or<(With<Sprite>, With<EditableCollider>)>
     )>,
     imgs: Res<Assets<Image>>,
     mut cmd: Commands,
@@ -73,23 +73,15 @@ pub fn mouse_select(
     if btn.just_pressed(MouseButton::Left) {
         btn.clear_just_pressed(MouseButton::Left);
         let mut best = None;
-        for (e, xf, spr, h_img, shape) in q.iter() {
+        for (e, xf, spr, h_img, edit) in q.iter() {
             //dbg!(best);
             let minv = xf.compute_matrix().inverse();
             let pos_model = minv.transform_point3(crs.0.extend(xf.translation.z));
             //dbg!(pos_model);
 
-            let spr_sz = if let Some(shape) = shape {
-                match shape {
-                    CollisionShape::Cuboid { half_extends, border_radius: _ } => {
-                        //dbg!(half_extends);
-                        half_extends.truncate()
-                    }
-                    _ => {
-                        // unimplemented
-                        continue;
-                    }
-                }
+            let spr_sz = if let Some(edit) = edit {
+                //dbg!(half_extends);
+                edit.half_extends
             } else if let Some(spr) = spr {
                 spr.custom_size
                     .or_else(|| {
@@ -120,7 +112,7 @@ pub fn mouse_select(
         if let Some((_, e, sz)) = best {
             if sels.0.contains_key(&e) {
                 let sel = sels.0.remove(&e).unwrap();
-                cmd.entity(sel).despawn();
+                cmd.entity(sel).despawn_recursive();
             } else {
                 let sel = cmd.spawn_bundle(SelectionBundle::new(e, sz)).id();
                 sels.0.insert(e, sel);
@@ -155,63 +147,5 @@ pub fn selection_track_target(
             cmd.entity(e).despawn();
             sels.0.remove(&sel.0);
         }
-    }
-}
-
-#[derive(Component)]
-pub struct ColliderVisualized;
-
-pub fn visualize_spriteless_colliders(
-    mut cmd: Commands,
-    q: Query<(Entity, &CollisionShape), (Without<Sprite>, Without<ColliderVisualized>)>
-) {
-    for (e, shape) in q.iter() {
-        match shape {
-            CollisionShape::Cuboid { half_extends, border_radius: _ } => {
-                let bundle = SpriteBundle {
-                    sprite: Sprite {
-                        color: Color::rgba(1.0, 0.75, 0.5, 0.25),
-                        custom_size: Some(half_extends.truncate() * 2.0),
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                };
-                cmd.entity(e)
-                    .insert(ColliderVisualized)
-                    .insert(bundle.sprite)
-                    .insert(bundle.texture)
-                    .insert(bundle.visibility);
-            }
-            _ => {
-                // unimplemented
-            }
-        }
-    }
-}
-
-pub fn update_collider_visualization(
-    mut q: Query<(&mut Sprite, &CollisionShape), With<ColliderVisualized>>
-) {
-    for (mut spr, shape) in q.iter_mut() {
-        match shape {
-            CollisionShape::Cuboid { half_extends, border_radius: _ } => {
-                spr.custom_size = Some(half_extends.truncate() * 2.0);
-            }
-            _ => {
-                // unimplemented
-            }
-        }
-    }
-}
-
-pub fn cleanup_collider_visualizations(
-    mut cmd: Commands,
-    q: Query<Entity, With<ColliderVisualized>>,
-) {
-    for e in q.iter() {
-        cmd.entity(e)
-            .remove::<ColliderVisualized>()
-            .remove::<Sprite>()
-            .remove::<Handle<Image>>();
     }
 }
