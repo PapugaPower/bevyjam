@@ -71,7 +71,8 @@ fn init_mainmenu(
         ),
         ..Default::default()
     }).insert(AmmoCounter)
-        .id();
+    .insert(HudCleanup)
+    .id();
 
     let health_txt = cmd.spawn_bundle(TextBundle {
         text: Text::with_section(
@@ -81,7 +82,8 @@ fn init_mainmenu(
         ),
         ..Default::default()
     }).insert(HealthCounter)
-        .id();
+    .insert(HudCleanup)
+    .id();
 }
 
 
