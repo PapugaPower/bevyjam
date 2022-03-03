@@ -192,6 +192,7 @@ fn init_bp_collider(
             .insert(Editable)
             .insert(crate::scene_exporter::SaveSceneMarker)
             // physics config
+            .insert(GlobalTransform::default())
             .insert(RigidBody::Static)
             .insert(CollisionLayers::none()
                 .with_group(PhysLayer::World)
