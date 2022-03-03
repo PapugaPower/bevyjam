@@ -20,6 +20,7 @@ use bevy::utils::HashSet;
 use heron::*;
 
 use crate::FuckStages;
+use crate::editor::Editable;
 use crate::editor::NewlySpawned;
 use crate::editor::collider::EditableCollider;
 
@@ -131,6 +132,7 @@ fn init_bp_medkit(
             // trigger for medkit
             commands
                 .spawn()
+                .insert(Editable)
                 .insert(GlobalTransform::default())
                 .insert(*xf)
                 .insert(Trigger {
@@ -186,6 +188,8 @@ fn init_bp_collider(
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
+            // editor integration
+            .insert(Editable)
             .insert(crate::scene_exporter::SaveSceneMarker)
             // physics config
             .insert(GlobalTransform::default())

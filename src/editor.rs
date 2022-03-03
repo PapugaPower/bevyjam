@@ -27,6 +27,9 @@ struct EditorHideCleanup;
 #[derive(Component)]
 pub struct NewlySpawned;
 
+#[derive(Component)]
+pub struct Editable;
+
 pub struct DevEditorPlugin;
 
 impl Plugin for DevEditorPlugin {

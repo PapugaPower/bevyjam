@@ -4,7 +4,7 @@ use heron::CollisionShape;
 
 use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker};
 
-use super::{UsingTool, NewlySpawned, collider::EditableCollider};
+use super::{UsingTool, NewlySpawned, collider::EditableCollider, Editable};
 
 const SELECTION_COLOR: Color = Color::rgba(1.0, 0.0, 1.0, 0.5);
 
@@ -77,7 +77,7 @@ pub fn mouse_select(
     ), (
         Without<NewlySpawned>,
         Without<Parent>,
-        With<SaveSceneMarker>,
+        With<Editable>,
         Or<(With<Sprite>, With<EditableCollider>)>
     )>,
     imgs: Res<Assets<Image>>,

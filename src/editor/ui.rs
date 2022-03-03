@@ -5,7 +5,7 @@ use enum_iterator::IntoEnumIterator;
 
 use crate::{ui::{UiAssets, UiConfig}, game::blueprints::Blueprint, util::WorldCursor, AppState};
 
-use super::{UsingTool, EditorHideCleanup, NewlySpawned, ToolState};
+use super::{UsingTool, EditorHideCleanup, NewlySpawned, ToolState, Editable};
 
 #[derive(Component)]
 struct EditorBtn;
@@ -51,15 +51,17 @@ pub(super) fn spawn_btn_handler<T: Blueprint>(
     mut btn: ResMut<Input<MouseButton>>,
     crs: Res<WorldCursor>,
 ) {
-    if clicked.is_some() {
-        btn.clear_just_pressed(MouseButton::Left);
-        toolstate.set(ToolState::Spawning).ok();
-        commands.spawn_bundle(T::BlueprintBundle::default())
-            .insert(Transform::from_translation(crs.0.extend(T::DEFAULT_Z)))
-            .insert(GlobalTransform::default())
-            .insert(crate::scene_exporter::SaveSceneMarker)
-            .insert(NewlySpawned);
+    if clicked.is_none() {
+        return;
     }
+    btn.clear_just_pressed(MouseButton::Left);
+    toolstate.set(ToolState::Spawning).ok();
+    commands.spawn_bundle(T::BlueprintBundle::default())
+        .insert(Transform::from_translation(crs.0.extend(T::DEFAULT_Z)))
+        .insert(GlobalTransform::default())
+        .insert(crate::scene_exporter::SaveSceneMarker)
+        .insert(Editable)
+        .insert(NewlySpawned);
 }
 
 pub(super) fn tool_btn_visual(
