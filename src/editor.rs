@@ -36,6 +36,7 @@ impl Plugin for DevEditorPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<select::Selections>();
         app.init_resource::<ui::SpawnBtnParent>();
+        app.init_resource::<collider::ActiveDraghandle>();
         app.insert_resource(UsingTool::Select);
         app.add_system(enter_exit_editor);
         app.add_system_set_to_stage(
@@ -88,7 +89,8 @@ impl Plugin for DevEditorPlugin {
         app.add_system_set_to_stage(
             ToolStage,
             SystemSet::on_update(ToolState::Using(UsingTool::EditCollider))
-                .with_system(collider::mouse_edit_collider)
+                .with_system(collider::mouse_select_draghandle.label("select_draghandle"))
+                .with_system(collider::mouse_drag_handle.after("select_draghandle"))
         );
         app.add_system_set_to_stage(
             ToolStage,
