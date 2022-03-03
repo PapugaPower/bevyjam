@@ -10,7 +10,7 @@ mod select;
 mod transform;
 //mod spawn;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
 #[derive(IntoEnumIterator)]
 pub enum UsingTool {
     Select,
@@ -52,17 +52,35 @@ impl Plugin for DevEditorPlugin {
                 .with_system(select::set_selection_visibility::<false>)
                 .with_system(select::cleanup_collider_visualizations)
         );
+        app.add_stage_after(CoreStage::Update, ToolStage, SystemStage::single_threaded());
+        app.add_state_to_stage(ToolStage, ToolState::Inactive);
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_update(ToolState::Using(UsingTool::Select))
+                .with_system(select::mouse_select)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_update(ToolState::Using(UsingTool::Move))
+                .with_system(transform::mouse_move_selections)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_update(ToolState::Using(UsingTool::Rotate))
+                .with_system(transform::mouse_rotate_selections)
+        );
+        app.add_system_set_to_stage(
+            ToolStage,
+            SystemSet::on_update(ToolState::Spawning)
+                .with_system(transform::mouse_move_newlyspawned)
+        );
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
                 .with_system(select::keyboard_despawn_selected)
-                .with_system(select::mouse_select)
                 .with_system(select::visualize_spriteless_colliders)
                 .with_system(select::update_collider_visualization)
                 .with_system(transform::editor_camera)
-                .with_system(transform::mouse_move_selections)
-                .with_system(transform::mouse_move_newlyspawned)
-                .with_system(transform::mouse_rotate_selections)
                 .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 // handle spawn buttons for blueprints:
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
@@ -75,15 +93,31 @@ impl Plugin for DevEditorPlugin {
     }
 }
 
-pub fn enter_exit_editor(
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
+#[derive(StageLabel)]
+struct ToolStage;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Component)]
+enum ToolState {
+    Using(UsingTool),
+    Spawning,
+    Inactive,
+}
+
+fn enter_exit_editor(
     kbd: Res<Input<KeyCode>>,
     mut state: ResMut<State<AppState>>,
+    mut toolstate: ResMut<State<ToolState>>,
+    tool: Res<UsingTool>,
 ) {
     if kbd.just_pressed(KeyCode::F12) {
         if state.current() == &AppState::DevEditor {
             state.pop().unwrap();
+            toolstate.pop().unwrap();
         } else {
             state.push(AppState::DevEditor).unwrap();
+            toolstate.push(ToolState::Using(*tool)).unwrap();
         }
     }
 }
+

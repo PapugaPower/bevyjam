@@ -53,7 +53,7 @@ pub fn keyboard_despawn_selected(
 
 pub fn mouse_select(
     crs: Res<WorldCursor>,
-    btn: Res<Input<MouseButton>>,
+    mut btn: ResMut<Input<MouseButton>>,
     q: Query<(
         Entity,
         &GlobalTransform,
@@ -63,18 +63,15 @@ pub fn mouse_select(
     ), (
         Without<NoEditor>,
         Without<NewlySpawned>,
+        Without<Parent>,
         Or<(With<Sprite>, With<CollisionShape>)>
     )>,
     imgs: Res<Assets<Image>>,
     mut cmd: Commands,
     mut sels: ResMut<Selections>,
-    tool: Res<UsingTool>,
 ) {
-    if *tool != UsingTool::Select {
-        return;
-    }
-
     if btn.just_pressed(MouseButton::Left) {
+        btn.clear_just_pressed(MouseButton::Left);
         let mut best = None;
         for (e, xf, spr, h_img, shape) in q.iter() {
             //dbg!(best);

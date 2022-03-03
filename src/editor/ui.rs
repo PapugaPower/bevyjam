@@ -3,9 +3,9 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 
-use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle}, util::WorldCursor};
+use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle}, util::WorldCursor, AppState};
 
-use super::{UsingTool, EditorHideCleanup, NewlySpawned};
+use super::{UsingTool, EditorHideCleanup, NewlySpawned, ToolState};
 
 #[derive(Component)]
 struct EditorBtn;
@@ -32,18 +32,24 @@ impl ToolBtn {
 pub(super) fn tool_btn_handler(
     In(clicked): In<Option<ToolBtn>>,
     mut using: ResMut<UsingTool>,
+    mut toolstate: ResMut<State<ToolState>>,
 ) {
     if let Some(btn) = clicked {
         *using = btn.0;
+        toolstate.set(ToolState::Using(btn.0)).unwrap();
     }
 }
 
 pub(super) fn spawn_btn_handler<T: Blueprint>(
     In(clicked): In<Option<SpawnBtn<T>>>,
     mut commands: Commands,
+    mut toolstate: ResMut<State<ToolState>>,
+    mut btn: ResMut<Input<MouseButton>>,
     crs: Res<WorldCursor>,
 ) {
     if clicked.is_some() {
+        btn.clear_just_pressed(MouseButton::Left);
+        toolstate.set(ToolState::Spawning).ok();
         commands.spawn_bundle(BlueprintBundle {
             transform: Transform::from_translation(crs.0.extend(T::DEFAULT_Z)),
             marker: T::default(),
