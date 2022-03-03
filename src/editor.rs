@@ -102,6 +102,7 @@ impl Plugin for DevEditorPlugin {
         app.add_system_set(
             SystemSet::on_update(AppState::DevEditor)
                 .with_system(ui::tool_btn_visual)
+                .with_system(tool_hotkeys)
                 .with_system(collider::visualize_spriteless_colliders)
                 .with_system(collider::update_collider_visualization)
                 .with_system(transform::editor_camera)
@@ -144,5 +145,31 @@ fn enter_exit_editor(
             state.push(AppState::DevEditor).unwrap();
             toolstate.push(ToolState::Using(*tool)).unwrap();
         }
+    }
+}
+
+fn tool_hotkeys(
+    kbd: Res<Input<KeyCode>>,
+    mut tool: ResMut<UsingTool>,
+    mut toolstate: ResMut<State<ToolState>>,
+) {
+    let mut newtool = None;
+
+    if kbd.just_pressed(KeyCode::Q) {
+        newtool = Some(UsingTool::Select);
+    }
+    if kbd.just_pressed(KeyCode::W) {
+        newtool = Some(UsingTool::Move);
+    }
+    if kbd.just_pressed(KeyCode::E) {
+        newtool = Some(UsingTool::Rotate);
+    }
+    if kbd.just_pressed(KeyCode::R) {
+        newtool = Some(UsingTool::EditCollider);
+    }
+
+    if let Some(newtool) = newtool {
+        *tool = newtool;
+        toolstate.set(ToolState::Using(newtool)).ok();
     }
 }

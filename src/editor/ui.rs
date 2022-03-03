@@ -36,11 +36,8 @@ pub(super) fn tool_btn_handler(
     mut toolstate: ResMut<State<ToolState>>,
 ) {
     if let Some(btn) = clicked {
-        if btn.0 == *using {
-            return;
-        }
         *using = btn.0;
-        toolstate.set(ToolState::Using(btn.0)).unwrap();
+        toolstate.set(ToolState::Using(btn.0)).ok();
     }
 }
 
