@@ -20,16 +20,26 @@ impl Default for EditableCollider {
 }
 
 #[derive(Component)]
+pub struct ColliderEditorVisColor(pub Color);
+
+#[derive(Component)]
 pub struct ColliderVisualized;
 
 pub fn visualize_spriteless_colliders(
     mut cmd: Commands,
-    q: Query<(Entity, &EditableCollider), (Without<Sprite>, Without<ColliderVisualized>)>
+    q: Query<(
+        Entity,
+        &EditableCollider,
+        &ColliderEditorVisColor
+    ), (
+        Without<Sprite>,
+        Without<ColliderVisualized>
+    )>
 ) {
-    for (e, edit) in q.iter() {
+    for (e, edit, viscolor) in q.iter() {
         let bundle = SpriteBundle {
             sprite: Sprite {
-                color: Color::rgba(1.0, 0.75, 0.5, 0.25),
+                color: viscolor.0,
                 custom_size: Some(edit.half_extends * 2.0),
                 ..Default::default()
             },

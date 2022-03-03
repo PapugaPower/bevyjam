@@ -36,6 +36,7 @@ pub mod dev;
 
 pub use dev::DevPlaygroundPlugin;
 
+pub mod collider;
 pub mod blueprints;
 
 /// This plugin should add all common game systems used in all levels

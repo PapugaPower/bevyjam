@@ -14,6 +14,7 @@
 
 #![allow(unused_imports)]
 
+use bevy::ecs::system::EntityCommands;
 use bevy::ecs::system::SystemParam;
 use bevy::prelude::*;
 use bevy::utils::HashSet;
@@ -22,10 +23,13 @@ use heron::*;
 use crate::FuckStages;
 use crate::editor::Editable;
 use crate::editor::NewlySpawned;
+use crate::editor::collider::ColliderEditorVisColor;
 use crate::editor::collider::EditableCollider;
 
 use super::GameAssets;
 use super::GameCleanup;
+use super::collider;
+use super::collider::ColliderKind;
 
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
@@ -46,13 +50,17 @@ impl Plugin for BlueprintsPlugin {
         app.register_type::<Medkit>();
         app.register_type::<MultiUse>();
         app.register_type::<EditableCollider>();
+        app.register_type::<collider::Wall>();
+        app.register_type::<collider::HurtZone>();
+        app.register_type::<collider::WinZone>();
+        app.register_type::<collider::SpawnZone>();
         app.add_startup_system(add_blueprint_meta);
         //
         app.add_system_set_to_stage(
             FuckStages::Post,
             SystemSet::new()
                 .with_system(init_bp_medkit)
-                .with_system(init_bp_collider)
+                .with_system(init_bp_collider::<collider::Wall>)
         );
     }
 }
@@ -81,12 +89,17 @@ fn add_blueprint_meta(mut commands: Commands) {
     names.insert("Medkit");
     names.insert("MultiUse");
     names.insert("EditableCollider");
+    names.insert("Wall");
+    names.insert("HurtZone");
+    names.insert("SpawnZone");
+    names.insert("WinZone");
     commands.insert_resource(ExportableTypes { names });
 }
 
 /// Simple generic blueprint bundle, if you only want to initialize with a transform and marker
 #[derive(Bundle, Default)]
 pub struct BasicBlueprintBundle<T: Blueprint> {
+    pub global_transform: GlobalTransform,
     pub transform: Transform,
     pub marker: T,
 }
@@ -178,15 +191,42 @@ fn init_bp_medkit(
 
 // COLLIDERS
 
-impl Blueprint for EditableCollider {
-    const EDITOR_ID: &'static str = "Collider";
-    const DEFAULT_Z: f32 = 0.0;
-    type BlueprintBundle = BasicBlueprintBundle<EditableCollider>;
+#[derive(Bundle, Default)]
+pub struct ColliderBlueprintBundle<T: ColliderBehavior> {
+    #[bundle]
+    basic: BasicBlueprintBundle<T>,
+    collider: EditableCollider,
 }
 
-fn init_bp_collider(
+pub trait ColliderBehavior: Blueprint {
+    const EDITOR_COLOR: Color;
+    const KINDENUM: ColliderKind;
+
+    fn fill_blueprint(cmd: &mut EntityCommands);
+}
+
+impl Blueprint for collider::Wall {
+    const EDITOR_ID: &'static str = "Wall";
+    const DEFAULT_Z: f32 = 0.0;
+    type BlueprintBundle = ColliderBlueprintBundle<Self>;
+}
+
+impl ColliderBehavior for collider::Wall {
+    const KINDENUM: ColliderKind = ColliderKind::Wall;
+    const EDITOR_COLOR: Color = Color::rgba(1.0, 0.75, 0.5, 0.25);
+    fn fill_blueprint(cmd: &mut EntityCommands) {
+        cmd
+            .insert(GlobalTransform::default())
+            .insert(RigidBody::Static)
+            .insert(CollisionLayers::none()
+                .with_group(PhysLayer::World)
+                .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]));
+    }
+}
+
+fn init_bp_collider<T: ColliderBehavior>(
     mut commands: Commands,
-    q_bp: BlueprintQuery<EditableCollider>,
+    q_bp: BlueprintQuery<T>,
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
@@ -194,11 +234,8 @@ fn init_bp_collider(
             // editor integration
             .insert(Editable)
             .insert(crate::scene_exporter::SaveSceneMarker)
-            // physics config
-            .insert(GlobalTransform::default())
-            .insert(RigidBody::Static)
-            .insert(CollisionLayers::none()
-                .with_group(PhysLayer::World)
-                .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]));
+            .insert(T::KINDENUM)
+            .insert(ColliderEditorVisColor(T::EDITOR_COLOR));
+        T::fill_blueprint(&mut commands.entity(e));
     }
 }

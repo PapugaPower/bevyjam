@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use heron::CollisionShape;
 
-use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker, game::blueprints::BasicBlueprintBundle};
+use crate::{util::{WorldCursor, WorldCursorPrev}, scene_exporter::SaveSceneMarker, game::{blueprints::BasicBlueprintBundle, collider::ColliderKind}};
 
 use super::{UsingTool, NewlySpawned, collider::EditableCollider, Editable, ToolState};
 
@@ -191,23 +191,23 @@ pub(super) fn keyboard_duplicate_collider(
     mut cmd: Commands,
     mut sels: ResMut<Selections>,
     q_sel: Query<(Entity, &Selection)>,
-    q_src: Query<(&Transform, &EditableCollider)>,
+    q_src: Query<(&Transform, &EditableCollider, &ColliderKind)>,
     kbd: Res<Input<KeyCode>>,
     mut toolstate: ResMut<State<ToolState>>,
 ) {
     if kbd.just_pressed(KeyCode::D) {
         for (e, sel) in q_sel.iter() {
-            if let Ok((xf, edit)) = q_src.get(sel.0) {
+            if let Ok((xf, edit, kind)) = q_src.get(sel.0) {
                 // spawn new collider copying transform and dimensions
-                let new = cmd.spawn_bundle(BasicBlueprintBundle {
-                    transform: *xf,
-                    marker: edit.clone(),
-                })
+                let mut new = cmd.spawn();
+                new
                     .insert(GlobalTransform::default())
-                    .insert(crate::scene_exporter::SaveSceneMarker)
-                    .insert(Editable)
-                    .insert(NewlySpawned)
-                    .id();
+                    .insert(*xf)
+                    .insert(edit.clone())
+                    .insert(*kind)
+                    .insert(NewlySpawned);
+                kind.insert(&mut new);
+                let new = new.id();
                 // add selection for it
                 let newsel = cmd.spawn_bundle(SelectionBundle::new(new, edit.half_extends * 2.0)).id();
                 sels.0.insert(new, newsel);
