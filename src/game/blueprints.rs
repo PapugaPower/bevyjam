@@ -56,6 +56,8 @@ impl Plugin for BlueprintsPlugin {
 pub trait Blueprint: Component + Reflect + Default + Clone {
     const EDITOR_ID: &'static str;
     const DEFAULT_Z: f32;
+
+    type BlueprintBundle: Bundle + Default;
 }
 
 #[derive(SystemParam)]
@@ -79,7 +81,7 @@ fn add_blueprint_meta(mut commands: Commands) {
 }
 
 #[derive(Bundle, Default)]
-pub struct BlueprintBundle<T: Blueprint> {
+pub struct BasicBlueprintBundle<T: Blueprint> {
     pub transform: Transform,
     pub marker: T,
 }
@@ -92,9 +94,17 @@ pub struct Medkit {
     pub healing: f32,
 }
 
+#[derive(Bundle, Default)]
+pub struct MedkitBlueprintBundle {
+    pub transform: Transform,
+    pub medkit: Medkit,
+    pub multi_use: MultiUse,
+}
+
 impl Blueprint for Medkit {
     const EDITOR_ID: &'static str = "Medkit";
     const DEFAULT_Z: f32 = 1.0;
+    type BlueprintBundle = MedkitBlueprintBundle;
 }
 
 fn init_bp_medkit(
@@ -104,6 +114,12 @@ fn init_bp_medkit(
 ) {
     if let Some(assets) = assets {
         for (e, xf) in q_bp.query.iter() {
+            // The editor spawns the entity with a `NewlySpawned` component.
+            // This is used to enable positioning it in the scene with the mouse.
+            // Since we are reparenting the medkit under the trigger,
+            // we have to remove NewlySpawned from the medkit entity
+            // and add it to the toplevel trigger entity.
+
             // trigger for medkit
             commands
                 .spawn()
@@ -131,8 +147,6 @@ fn init_bp_medkit(
             // medkit
             commands
                 .entity(e)
-                // scene export support
-                .insert(crate::scene_exporter::SaveSceneMarker)
                 // hack to make spawning from editor work
                 .remove::<NewlySpawned>()
                 // sprite stuff
@@ -154,6 +168,7 @@ fn init_bp_medkit(
 impl Blueprint for EditableCollider {
     const EDITOR_ID: &'static str = "Collider";
     const DEFAULT_Z: f32 = 0.0;
+    type BlueprintBundle = BasicBlueprintBundle<EditableCollider>;
 }
 
 fn init_bp_collider(
@@ -162,8 +177,6 @@ fn init_bp_collider(
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
-            // scene export support
-            .insert(crate::scene_exporter::SaveSceneMarker)
             // physics config
             .insert(GlobalTransform::default())
             .insert(RigidBody::Static)

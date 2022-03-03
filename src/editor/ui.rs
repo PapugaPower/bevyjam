@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 
-use crate::{ui::{UiAssets, UiConfig}, game::blueprints::{Blueprint, BlueprintBundle}, util::WorldCursor, AppState};
+use crate::{ui::{UiAssets, UiConfig}, game::blueprints::Blueprint, util::WorldCursor, AppState};
 
 use super::{UsingTool, EditorHideCleanup, NewlySpawned, ToolState};
 
@@ -54,10 +54,11 @@ pub(super) fn spawn_btn_handler<T: Blueprint>(
     if clicked.is_some() {
         btn.clear_just_pressed(MouseButton::Left);
         toolstate.set(ToolState::Spawning).ok();
-        commands.spawn_bundle(BlueprintBundle {
-            transform: Transform::from_translation(crs.0.extend(T::DEFAULT_Z)),
-            marker: T::default(),
-        }).insert(NewlySpawned);
+        commands.spawn_bundle(T::BlueprintBundle::default())
+            .insert(Transform::from_translation(crs.0.extend(T::DEFAULT_Z)))
+            .insert(GlobalTransform::default())
+            .insert(crate::scene_exporter::SaveSceneMarker)
+            .insert(NewlySpawned);
     }
 }
 

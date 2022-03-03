@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
-use iyes_bevy_util::{despawn_with_recursive, despawn_with};
+use iyes_bevy_util::{despawn_with_recursive, despawn_with, remove_from_all};
 
 use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::Medkit};
 
@@ -52,6 +52,7 @@ impl Plugin for DevEditorPlugin {
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)
                 .with_system(ui::spawn_ui.label("editorui"))
+                .with_system(remove_from_all::<NewlySpawned>)
                 .with_system(select::set_selection_visibility::<true>)
         );
         app.add_system_set(
@@ -145,4 +146,3 @@ fn enter_exit_editor(
         }
     }
 }
-
