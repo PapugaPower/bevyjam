@@ -1,7 +1,6 @@
 use super::shooting::WeaponryBundle;
 use super::{GameAssets, SpatialAudioReceptor};
 use crate::game::animations::ShootingAnimationBundle;
-use crate::game::crosshair::Crosshair;
 use crate::game::damage::Health;
 use crate::game::enemies::EnemyWave;
 use crate::game::phys_layers::PhysLayer;
@@ -12,13 +11,34 @@ use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 
 #[derive(Component)]
-pub struct Player {
-    // to be expanded
-}
+pub struct Player;
 
 #[derive(Component)]
 pub struct PlayerMovementSpeed {
     pub value: f32,
+}
+
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    pub player: Player,
+    pub movement_speed: PlayerMovementSpeed,
+    pub health: Health,
+    // cleanup marker
+    pub cleanup: super::GameCleanup,
+}
+
+impl Default for PlayerBundle {
+    fn default() -> Self {
+        Self {
+            player: Player,
+            movement_speed: PlayerMovementSpeed { value: 320.0 },
+            health: Health {
+                current: 200.,
+                max: 200.,
+            },
+            cleanup: super::GameCleanup,
+        }
+    }
 }
 
 pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
@@ -35,13 +55,7 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
                 transform: player_transform,
                 ..Default::default()
             })
-            .insert(super::GameCleanup)
-            .insert(Player {})
-            .insert(Health {
-                current: 200.,
-                max: 200.,
-            })
-            .insert(PlayerMovementSpeed { value: 320.0 })
+            .insert_bundle(PlayerBundle::default())
             .insert_bundle(WeaponryBundle::default())
             .insert_bundle(ShootingAnimationBundle::default())
             .insert(EnemyWave {
@@ -64,7 +78,7 @@ pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
 pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input<KeyCode>>) {
     if keys.just_pressed(KeyCode::P) {
         let t = q.single();
-        println!("Current player position: {}", t.translation.to_string());
+        println!("Current player position: {:?}", t.translation);
     }
 }
 
@@ -73,15 +87,13 @@ pub fn transfer_input_to_player_system(
         (&mut Transform, &CollisionShape, &PlayerMovementSpeed),
         With<Player>,
     >,
-    xhair_q: Query<&Crosshair>,
     keys: Res<Input<KeyCode>>,
     time: Res<Time>,
     crs: Res<WorldCursor>,
     physics_world: PhysicsWorld,
 ) {
     let (mut player_tform, player_col, speed) = player_tform_q.single_mut();
-    let xhair = xhair_q.single();
-    let mut mouse_pos_level = crs.0.extend(0.0);
+    let mouse_pos_level = crs.0.extend(0.0);
 
     let direction = mouse_pos_level - player_tform.translation;
     let angle = direction.y.atan2(direction.x);
