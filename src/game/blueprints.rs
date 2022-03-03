@@ -162,6 +162,9 @@ fn init_bp_collider(
 ) {
     for (e, _) in q_bp.query.iter() {
         commands.entity(e)
+            // scene export support
+            .insert(crate::scene_exporter::SaveSceneMarker)
+            // physics config
             .insert(GlobalTransform::default())
             .insert(RigidBody::Static)
             .insert(CollisionLayers::none()

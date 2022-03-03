@@ -91,49 +91,6 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         .insert(RigidBody::Dynamic)
         .insert(CollisionShape::Sphere { radius: 20.0 });
 
-    // top
-    let width = 945.0;
-    let height = 25.0;
-    commands.spawn()
-        .insert(Transform::from_xyz(-25.5, 355.0, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-    // bot
-    commands.spawn()
-        .insert(Transform::from_xyz(-25.5, -85.0, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-    // letf top
-    let width = 20.0;
-    let height = 130.0;
-    commands.spawn()
-        .insert(Transform::from_xyz(-488.0, 280.0, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-    // letf bot
-    commands.spawn()
-        .insert(Transform::from_xyz(-488.0, -7.5, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-    // right top
-    let width = 20.0;
-    let height = 130.0;
-    commands.spawn()
-        .insert(Transform::from_xyz(437.0, 280.0, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-    // right bot
-    commands.spawn()
-        .insert(Transform::from_xyz(437.0, -7.5, 0.0))
-        .insert(EditableCollider {
-            half_extends: Vec2::new(width / 2.0, height / 2.0),
-        });
-
     // background
     commands.spawn_bundle(SpriteBundle {
         sprite: Sprite {
