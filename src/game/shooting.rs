@@ -1,12 +1,34 @@
+use crate::game::animations::ShootingAnimationState;
 use crate::game::crosshair::Crosshair;
 use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
+use crate::game::enemies::Enemy;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::{Player, ShootingAnimationState};
+use crate::game::player::Player;
 use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
 use heron::{prelude::*, rapier_plugin::PhysicsWorld};
 use rand::Rng;
+
+#[derive(Debug, Clone, Copy)]
+pub struct PlayerFiredEvent {
+    pub entity: Entity,
+    pub ammo_type: AmmoType,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BulletImpactEvent {
+    pub position: Vec3,
+    pub direction: Vec3,
+    pub surface: ImpactSurface,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ImpactSurface {
+    World,
+    Monster,
+    Player,
+}
 
 #[derive(Component)]
 pub struct LastShootTime {
@@ -60,12 +82,12 @@ pub struct GunMagazine {
     pub current: i32,
     pub max: i32,
     pub reload_time: f32,
-    pub current_reload: f32
+    pub current_reload: f32,
 }
 
 #[derive(Component)]
 pub struct SpareAmmo {
-    pub current: i32
+    pub current: i32,
 }
 
 pub fn player_shoot(
@@ -73,13 +95,26 @@ pub fn player_shoot(
     mut ev_fired: EventWriter<PlayerFiredEvent>,
     time: Res<Time>,
     keys: Res<Input<MouseButton>>,
-    mut query_player: Query<(Entity, &Transform, &Weapon, &mut LastShootTime, &mut ShootingAnimationState, &mut GunMagazine), With<Player>>,
+    mut query_player: Query<
+        (
+            Entity,
+            &Transform,
+            &Weapon,
+            &mut LastShootTime,
+            &mut ShootingAnimationState,
+            &mut GunMagazine,
+        ),
+        With<Player>,
+    >,
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
     // TODO handle input
     if keys.pressed(MouseButton::Left) {
-        let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) = query_player.single_mut();
-        if mag.current < 1 || mag.current_reload > 0.0 { return; } // return if out of ammo or reloading
+        let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) =
+            query_player.single_mut();
+        if mag.current < 1 || mag.current_reload > 0.0 {
+            return;
+        } // return if out of ammo or reloading
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let spawn_transform = {
@@ -108,7 +143,7 @@ pub fn player_shoot(
                     weapon.spread / (weapon.projectiles_per_shot - 1) as f32,
                 )
             };
-            
+
             // reduce current ammo in mag
             mag.current = mag.current - 1;
 
@@ -218,6 +253,7 @@ pub fn projectiles_controller(
     mut impact_event: EventWriter<BulletImpactEvent>,
     physics_world: PhysicsWorld,
     query_player: Query<Entity, With<Player>>,
+    query_enemy: Query<Entity, With<Enemy>>,
     mut query_projectiles: Query<(Entity, &Projectile, &mut Transform)>,
 ) {
     let player_entity = query_player.single();
@@ -228,32 +264,24 @@ pub fn projectiles_controller(
             let surface = if collision.entity == player_entity {
                 ImpactSurface::Player
             } else if (collision.collision_point - transform.translation).length() <= bullet_travel
+                && query_enemy.get(collision.entity).is_ok()
             {
-                damage_event.send(DamageEvent {
-                    entity: collision.entity,
-                    source: DamageSource::Weapon,
-                    damage: projectile.damage,
-                });
-                commands.entity(entity).despawn();
                 ImpactSurface::Monster
             } else {
                 ImpactSurface::World
             };
+            damage_event.send(DamageEvent {
+                entity: collision.entity,
+                source: DamageSource::Weapon,
+                damage: projectile.damage,
+            });
+            commands.entity(entity).despawn();
+
             impact_event.send(BulletImpactEvent {
-                pos: collision.collision_point,
+                position: collision.collision_point,
+                direction: projectile.direction,
                 surface,
             });
-
-            // debug collision point
-            // commands.spawn_bundle(SpriteBundle {
-            //     sprite: Sprite {
-            //         color: Color::GREEN,
-            //         custom_size: Some(Vec2::new(10., 10.)),
-            //         ..Default::default()
-            //     },
-            //     transform: Transform::from_translation(collision.collision_point),
-            //     ..Default::default()
-            // });
         }
         transform.translation += projectile.direction * bullet_travel;
     }
@@ -273,30 +301,13 @@ pub fn armaments_despawn(
     }
 }
 
-pub fn handle_shot_audio(
-    audio: Res<Audio>,
-    channel: Res<GameAudioChannel>,
-    assets: Res<GameAssets>,
-    mut ev_fired: EventReader<PlayerFiredEvent>,
-) {
-    for ev in ev_fired.iter() {
-        match ev.ammo_type {
-            AmmoType::Projectile => {
-                audio.play_in_channel(assets.smg_shot_audio.clone(), &channel.0);
-            }
-            AmmoType::Throwable => {}
-            AmmoType::Static => {}
-        }
-    }
-}
-
-pub fn gun_reload (
-    time: Res<Time>, 
+pub fn gun_reload(
+    time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut q: Query<(&mut GunMagazine, &mut SpareAmmo), With<Player>>
-){
+    mut q: Query<(&mut GunMagazine, &mut SpareAmmo), With<Player>>,
+) {
     let (mut mag, mut spare_ammo) = q.single_mut();
-    
+
     // If a reload is in progress, try to complete it.
     if mag.current_reload > 0.0 {
         mag.current_reload += time.delta_seconds();
@@ -314,10 +325,29 @@ pub fn gun_reload (
         }
         return;
     }
-    
-    if keys.just_pressed(KeyCode::R){
-        if spare_ammo.current < 1 || mag.current == mag.max { return; }
+
+    if keys.just_pressed(KeyCode::R) {
+        if spare_ammo.current < 1 || mag.current == mag.max {
+            return;
+        }
         mag.current_reload += time.delta_seconds(); // add delta early, acts as a flog
+    }
+}
+
+pub fn handle_shot_audio(
+    audio: Res<Audio>,
+    channel: Res<GameAudioChannel>,
+    assets: Res<GameAssets>,
+    mut ev_fired: EventReader<PlayerFiredEvent>,
+) {
+    for ev in ev_fired.iter() {
+        match ev.ammo_type {
+            AmmoType::Projectile => {
+                audio.play_in_channel(assets.smg_shot_audio.clone(), &channel.0);
+            }
+            AmmoType::Throwable => {}
+            AmmoType::Static => {}
+        }
     }
 }
 
@@ -370,23 +400,6 @@ pub fn handle_impact_audio(
         });*/
         return; // exit after first iteration to reduce audio spam
     }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct PlayerFiredEvent {
-    pub entity: Entity,
-    pub ammo_type: AmmoType,
-}
-
-pub struct BulletImpactEvent {
-    pub pos: Vec3,
-    pub surface: ImpactSurface,
-}
-
-pub enum ImpactSurface {
-    World,
-    Monster,
-    Player,
 }
 
 // pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {

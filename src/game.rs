@@ -1,14 +1,15 @@
+mod animations;
 mod audio2d;
 mod crosshair;
 pub(crate) mod damage;
 mod enemies;
+mod environment;
 mod hints;
 mod main_camera;
+mod phys_layers;
 pub(crate) mod player;
 pub(crate) mod shooting;
 mod timer;
-mod environment;
-mod phys_layers;
 
 use bevy::prelude::*;
 use bevy_asset_loader::AssetCollection;
@@ -16,17 +17,18 @@ use bevy_kira_audio::{AudioChannel, AudioSource};
 use heron::RigidBody;
 use iyes_bevy_util::*;
 
-use crate::AppState;
+use crate::game::animations::*;
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::enemies::*;
-use crate::game::environment::{*, door::*, medkit::*, barrel::*};
+use crate::game::environment::{barrel::*, door::*, medkit::*, *};
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
 use crate::game::timer::*;
 use crate::util::MainCamera;
+use crate::AppState;
 use hints::*;
 
 pub mod sc1;
@@ -36,8 +38,8 @@ pub mod dev;
 
 pub use dev::DevPlaygroundPlugin;
 
-pub mod collider;
 pub mod blueprints;
+pub mod collider;
 
 /// This plugin should add all common game systems used in all levels
 pub struct GamePlugin<S: BevyState> {
@@ -65,7 +67,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_enter(self.state.clone())
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
-                .with_system(init_player).label("init_player")
+                .with_system(init_player)
+                .label("init_player")
                 .with_system(init_hints)
                 .with_system(set_cursor_visibility::<false>),
         );
@@ -87,9 +90,9 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(armaments_despawn)
                 .with_system(gun_reload)
-                .with_system(handle_shot_audio.after("player_shoot"))
-                .with_system(handle_impact_audio)
-                // damage 
+                // .with_system(handle_shot_audio.after("player_shoot"))
+                // .with_system(handle_impact_audio)
+                // damage
                 .with_system(pulsation_controller.label("pulses"))
                 .with_system(explosive_objects_controller)
                 .with_system(
@@ -99,8 +102,10 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                         .after("enemy_controller"),
                 )
                 // animation
-                .with_system(explosive_objects_animation)
-                .with_system(player_shooting_animation)
+                .with_system(animations_removal)
+                .with_system(animation_player_shooting)
+                .with_system(animation_player_impact.after("projectiles"))
+                .with_system(animation_explosive_objects)
                 // interaction processing
                 .with_system(trigger_player_detection)
                 .with_system(trigger_interaction.label("trigger_interaction"))
@@ -143,6 +148,12 @@ pub struct GameAssets {
     pub medkit: Handle<Image>,
     #[asset(key = "animation.explosion")]
     pub explosion: Handle<Image>,
+    #[asset(key = "animation.blood_splash")]
+    pub blood_splash: Handle<Image>,
+    #[asset(key = "animation.hit_0")]
+    pub hit_0: Handle<Image>,
+    #[asset(key = "animation.hit_1")]
+    pub hit_1: Handle<Image>,
     #[asset(key = "audio.smg_shot")]
     pub smg_shot_audio: Handle<AudioSource>,
     #[asset(path = "audio/world_impacts", folder)]
@@ -164,10 +175,7 @@ pub enum GameResult {
 
 /// exit to main menu on pressing Esc
 /// FIXME: temporary until we have a menu
-fn exit_game_on_esc(
-    kbd: Res<Input<KeyCode>>,
-    mut state: ResMut<State<AppState>>,
-) {
+fn exit_game_on_esc(kbd: Res<Input<KeyCode>>, mut state: ResMut<State<AppState>>) {
     if kbd.just_pressed(KeyCode::Escape) {
         state.replace(AppState::MainMenu).ok();
     }
@@ -181,19 +189,21 @@ fn set_cursor_visibility<const VIS: bool>(mut wnds: ResMut<Windows>) {
 /// Ensure our various game entities have a cleanup marker
 fn add_missing_cleanup(
     mut commands: Commands,
-    query: Query<Entity, (
-        Without<GameCleanup>,
-        Or<(
-            With<RigidBody>,
-            With<Player>,
-            With<Projectile>,
-            With<Enemy>,
-            With<Trigger>,
-        )>,
-    )>,
+    query: Query<
+        Entity,
+        (
+            Without<GameCleanup>,
+            Or<(
+                With<RigidBody>,
+                With<Player>,
+                With<Projectile>,
+                With<Enemy>,
+                With<Trigger>,
+            )>,
+        ),
+    >,
 ) {
     for e in query.iter() {
-        commands.entity(e)
-            .insert(GameCleanup);
+        commands.entity(e).insert(GameCleanup);
     }
 }

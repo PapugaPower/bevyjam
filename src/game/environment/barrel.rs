@@ -1,8 +1,5 @@
 use crate::game::damage::{Health, Pulsing};
-use crate::game::GameAssets;
-use benimator::{Play, SpriteSheetAnimation};
 use bevy::prelude::*;
-use bevy::utils::Duration;
 
 #[derive(Debug, Component)]
 pub enum ExplosiveObjectState {
@@ -42,37 +39,3 @@ pub fn explosive_objects_controller(
     }
 }
 
-pub fn explosive_objects_animation(
-    mut commands: Commands,
-    assets: Option<Res<GameAssets>>,
-    mut textures: ResMut<Assets<TextureAtlas>>,
-    mut animations: ResMut<Assets<SpriteSheetAnimation>>,
-    query: Query<(Entity, &Transform, &ExplosiveObjectState), Without<TextureAtlasSprite>>,
-) {
-    if let Some(assets) = assets {
-        let animation_handle = animations.add(SpriteSheetAnimation::from_range(
-            0..=29,
-            Duration::from_millis(50),
-        ));
-        for (entity, transform, state) in query.iter() {
-            if let ExplosiveObjectState::Exploding(_) = state {
-                commands
-                    .entity(entity)
-                    .remove_bundle::<SpriteBundle>()
-                    .insert_bundle(SpriteSheetBundle {
-                        texture_atlas: textures.add(TextureAtlas::from_grid(
-                            assets.explosion.clone(),
-                            Vec2::new(124.0, 119.0),
-                            6,
-                            5,
-                        )),
-                        transform: *transform,
-                        ..Default::default()
-                    })
-                    // Insert the asset handle of the animation
-                    .insert(animation_handle.clone())
-                    .insert(Play);
-            }
-        }
-    }
-}
