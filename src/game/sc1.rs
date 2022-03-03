@@ -24,6 +24,7 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state)
+                .with_system(spawn_dynamic_scene)
                 .with_system(init_game_timer)
         );
         app.add_system_set(
@@ -37,6 +38,8 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
 
 #[derive(AssetCollection)]
 struct Sc1Assets {
+    #[asset(key = "scene.sc1")]
+    pub scene: Handle<DynamicScene>,
 }
 
 fn init_game_timer(
@@ -44,4 +47,11 @@ fn init_game_timer(
 ) {
     let timer = Timer::from_seconds(3.0 * 60.0, false);
     commands.insert_resource(GameTimer(timer));
+}
+
+fn spawn_dynamic_scene(
+    mut scene_spawner: ResMut<SceneSpawner>,
+    assets: Res<Sc1Assets>,
+) {
+    scene_spawner.spawn_dynamic(assets.scene.clone());
 }
