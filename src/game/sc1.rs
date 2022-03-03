@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 use iyes_bevy_util::BevyState;
+use crate::game::GameAssets;
 
 use crate::game::timer::GameTimer;
 
@@ -26,6 +27,7 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
             SystemSet::on_enter(self.state)
                 .with_system(spawn_dynamic_scene)
                 .with_system(init_game_timer)
+                .with_system(load_game_map)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
@@ -40,6 +42,8 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
 struct Sc1Assets {
     #[asset(key = "scene.sc1")]
     pub scene: Handle<DynamicScene>,
+    #[asset(key = "enviro.map_level_0")]
+    pub map_level_0: Handle<Image>,
 }
 
 fn init_game_timer(
@@ -54,4 +58,21 @@ fn spawn_dynamic_scene(
     assets: Res<Sc1Assets>,
 ) {
     scene_spawner.spawn_dynamic(assets.scene.clone());
+}
+fn load_game_map(
+    mut commands: Commands,
+    assets: Res<Sc1Assets>,
+){
+    let mut level_tform = Transform::from_xyz(0.0, 0.0, -1.5);
+    level_tform.scale = Vec3::new(1.25, 1.25,1.0);
+    commands.spawn_bundle(SpriteBundle {
+        sprite: Sprite {
+            custom_size: Some(Vec2::new(8192.0, 8192.0)),
+            ..Default::default()
+        },
+        transform: level_tform,
+        global_transform: Default::default(),
+        texture: assets.map_level_0.clone(),
+        visibility: Default::default(),
+    });
 }

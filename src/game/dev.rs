@@ -49,8 +49,6 @@ pub struct DevAssets {
     pub map_prototype: Handle<Image>,
     #[asset(key = "scene.dev")]
     pub scene: Handle<DynamicScene>,
-    #[asset(key = "enviro.map_level_0")]
-    pub map_level_0: Handle<Image>,
     #[asset(key = "enviro.generator")]
 	pub generator: Handle<AudioSource>,
 }
@@ -100,19 +98,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
         visibility: Default::default(),
     });
 
-    // big level
-    let mut level_tform = Transform::from_xyz(3596.0, 0.0, -1.5);
-    level_tform.scale = Vec3::new(1.25, 1.25,1.0);
-    commands.spawn_bundle(SpriteBundle {
-        sprite: Sprite {
-            custom_size: Some(Vec2::new(8192.0, 8192.0)),
-            ..Default::default()
-        },
-        transform: level_tform,
-        global_transform: Default::default(),
-        texture: assets.map_level_0.clone(),
-        visibility: Default::default(),
-    });
+
     return;
 	// "generator"
     commands.spawn_bundle(SpriteBundle {
