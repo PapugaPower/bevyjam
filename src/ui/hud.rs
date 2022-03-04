@@ -1,13 +1,15 @@
 use std::fmt::Alignment;
 use bevy::{prelude::*, app::AppExit};
+use bevy_kira_audio::Audio;
 
 use iyes_bevy_util::{BevyState, despawn_with_recursive};
 
 use crate::{GameMode, AppState, FuckStages, WeaponMagazine, SpareAmmo};
 use crate::game::damage::Health;
 use crate::game::player::Player;
+use crate::game;
 
-use super::{UiAssets, UiNinepatches, ContentId, UiConfig, Btn, fill_btn, spawn_button};
+use super::{UiAudioChannel, UiAssets, UiNinepatches, ContentId, UiConfig, Btn, fill_btn, spawn_button};
 
 
 #[derive(Component)]
@@ -22,6 +24,9 @@ pub struct AmmoCounter;
 
 #[derive(Component)]
 pub struct HealthCounter;
+
+#[derive(Component)]
+pub struct GameTimer(u64);
 
 impl<S: BevyState> Plugin for HudPlugin<S> {
     fn build(&self, app: &mut App) {
@@ -38,6 +43,7 @@ impl<S: BevyState> Plugin for HudPlugin<S> {
             SystemSet::on_update(self.state.clone())
                 .with_system(update_ammo)
                 .with_system(update_health)
+                .with_system(update_timer)
         );
     }
 }
@@ -84,6 +90,33 @@ fn init_mainmenu(
     }).insert(HealthCounter)
     .insert(HudCleanup)
     .id();
+
+	let mut timer_style = uicfg.hud_resource_counter_style_text.clone();
+	timer_style.font_size *= 3.0;
+	cmd.spawn_bundle(TextBundle {
+		text: Text::with_section(
+			"00:00",
+			timer_style,
+			TextAlignment {
+				vertical: VerticalAlign::Top,
+				horizontal: HorizontalAlign::Center,
+			}
+		),
+		// It's supposed to go at the center-top but other elements interfere, so just leave as is
+		// for now
+		/*
+		style: Style {
+			margin: Rect {
+				top: Val::Px(2.0),
+				bottom: Val::Auto,
+				left: Val::Auto,
+				right: Val::Auto,
+			},
+			..Default::default()
+		},
+		*/
+		..Default::default()
+	}).insert(GameTimer(0)).insert(HudCleanup);
 }
 
 
@@ -107,4 +140,22 @@ fn update_health (
     text.sections[0].value = str;
 }
 
+fn update_timer(
+	mut ui: Query<(&mut Text, &mut GameTimer)>,
+	time: Res<game::GameTimer>,
+	audio: Res<Audio>,
+	channel: Res<UiAudioChannel>,
+    assets: Res<UiAssets>,
+) {
+	let (mut text, mut gt) = ui.single_mut();
+	// Directly use seconds to round up
+	let t = time.0.duration().as_secs() - time.0.elapsed().as_secs();
+	if gt.0 != t {
+		gt.0 = t;
+		text.sections[0].value = format!("{:02}:{:02}", t / 60, t % 60);
 
+		if true {
+			audio.play_in_channel(assets.snd_button_on.clone(), &channel.0);
+		}
+	}
+}

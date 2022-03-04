@@ -26,7 +26,7 @@ use crate::game::environment::{barrel::*, door::*, medkit::*, *};
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
-use crate::game::timer::*;
+pub use crate::game::timer::*;
 use crate::util::MainCamera;
 use crate::AppState;
 use hints::*;
