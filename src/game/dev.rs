@@ -4,10 +4,8 @@ use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
 
-use crate::game::environment::debug_environment_damage_zones;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
-use crate::game::environment::door::debug_spawn_door;
 
 use super::GameCleanup;
 
