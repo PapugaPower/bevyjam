@@ -3,6 +3,7 @@ use crate::game::player::{PlayerState, PlayerStateEnum};
 use crate::game::shooting::{BulletImpactEvent, ImpactSurface};
 use crate::game::GameAssets;
 use benimator::{Play, SpriteSheetAnimation};
+use bevy::ecs::entity;
 use bevy::prelude::*;
 use bevy::utils::Duration;
 
@@ -197,10 +198,9 @@ impl ExplosionAnimations {
                     6,
                     5,
                 )),
-                animation: animations.add(SpriteSheetAnimation::from_range(
-                    0..=29,
-                    Duration::from_millis(50),
-                )),
+                animation: animations.add(
+                    SpriteSheetAnimation::from_range(0..=29, Duration::from_millis(50)).once(),
+                ),
             },
         }
     }
@@ -230,7 +230,10 @@ pub fn animations_init(
     println!("inserted animations");
 }
 
-pub fn animations_removal(mut commands: Commands, animations: RemovedComponents<Play>) {
+pub fn animations_removal(
+    mut commands: Commands,
+    animations: Query<Entity, (With<Handle<SpriteSheetAnimation>>, Without<Play>)>,
+) {
     for entity in animations.iter() {
         commands.entity(entity).despawn();
     }
