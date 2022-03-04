@@ -165,9 +165,19 @@ fn init_bp_medkit(
 
             // trigger for medkit
             commands
-                .spawn()
+                .entity(e)
+                .insert(crate::scene_exporter::SaveSceneMarker)
                 .insert(GameCleanup)
                 .insert(Editable)
+                .insert_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(32., 32.)),
+                        color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                        ..Default::default()
+                    },
+                    texture: assets.medkit.clone(),
+                    ..Default::default()
+                })
                 .insert(GlobalTransform::default())
                 .insert(*xf)
                 .insert(Trigger {
@@ -183,27 +193,6 @@ fn init_bp_medkit(
                 .insert(CollisionShape::Cuboid {
                     half_extends: Vec3::new(20., 20., 1.),
                     border_radius: None,
-                })
-                // hack to make spawning from editor work
-                .insert(NewlySpawned)
-                // medkit is child of sensor
-                .add_child(e);
-
-            // medkit
-            commands
-                .entity(e)
-                .insert(crate::scene_exporter::SaveSceneMarker)
-                // hack to make spawning from editor work
-                .remove::<NewlySpawned>()
-                // sprite stuff
-                .insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(32., 32.)),
-                        color: Color::rgba(1.0, 1.0, 1.0, 0.7),
-                        ..Default::default()
-                    },
-                    texture: assets.medkit.clone(),
-                    ..Default::default()
                 });
         }
     }
@@ -249,9 +238,19 @@ fn init_bp_ammo_box(
         for (e, _ammo_box, xf) in q_bp.query.iter() {
             // trigger for ammo box
             commands
-                .spawn()
+                .entity(e)
+                .insert(crate::scene_exporter::SaveSceneMarker)
                 .insert(GameCleanup)
                 .insert(Editable)
+                .insert_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(32., 32.)),
+                        color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                        ..Default::default()
+                    },
+                    texture: assets.ammo.clone(),
+                    ..Default::default()
+                })
                 .insert(GlobalTransform::default())
                 .insert(*xf)
                 .insert(Trigger {
@@ -267,27 +266,6 @@ fn init_bp_ammo_box(
                 .insert(CollisionShape::Cuboid {
                     half_extends: Vec3::new(20., 20., 1.),
                     border_radius: None,
-                })
-                // hack to make spawning from editor work
-                .insert(NewlySpawned)
-                // medkit is child of sensor
-                .add_child(e);
-
-            // actual box
-            commands
-                .entity(e)
-                .insert(crate::scene_exporter::SaveSceneMarker)
-                // hack to make spawning from editor work
-                .remove::<NewlySpawned>()
-                // sprite stuff
-                .insert_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        custom_size: Some(Vec2::new(32., 32.)),
-                        color: Color::rgba(1.0, 1.0, 1.0, 0.7),
-                        ..Default::default()
-                    },
-                    texture: assets.ammo.clone(),
-                    ..Default::default()
                 });
         }
     }
