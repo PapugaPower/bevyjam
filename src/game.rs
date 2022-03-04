@@ -22,7 +22,7 @@ use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::enemies::*;
-use crate::game::environment::{barrel::*, door::*, medkit::*, *};
+use crate::game::environment::{barrel::*, door::*, medkit::*, ammo_box::*, *};
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
@@ -123,11 +123,13 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(check_game_win)
                 .with_system(door_interaction.after("trigger_interaction"))
                 .with_system(medkit_interaction.after("trigger_interaction"))
+                .with_system(ammo_box_interaction.after("trigger_interaction"))
+                .with_system(process_interactable_despawn)
                 // spatial sound
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))
                 .with_system(spatial_audio_added.label("spatial_audio_added"))
-                .with_system(spatial_audio_removed),
+                .with_system(spatial_audio_removed)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
@@ -159,6 +161,8 @@ pub struct GameAssets {
     pub player_shoot: Handle<Image>,
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
+    #[asset(key = "item.ammo")]
+    pub ammo: Handle<Image>,
     #[asset(key = "animation.explosion")]
     pub explosion: Handle<Image>,
     #[asset(key = "animation.blood_splash")]

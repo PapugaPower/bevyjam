@@ -48,6 +48,7 @@ impl Plugin for BlueprintsPlugin {
     fn build(&self, app: &mut App) {
         // registration: add our own types that should be exported to scenes:
         app.register_type::<Medkit>();
+        app.register_type::<AmmoBox>();
         app.register_type::<MultiUse>();
         app.register_type::<EditableCollider>();
         app.register_type::<collider::Wall>();
@@ -60,6 +61,7 @@ impl Plugin for BlueprintsPlugin {
             FuckStages::Post,
             SystemSet::new()
                 .with_system(init_bp_medkit)
+                .with_system(init_bp_ammo_box)
                 .with_system(init_bp_collider::<collider::Wall>)
                 .with_system(init_bp_collider::<collider::HurtZone>)
                 .with_system(init_bp_collider::<collider::WinZone>)
@@ -94,6 +96,7 @@ fn add_blueprint_meta(mut commands: Commands) {
     // add everything that might be used in a blueprint here:
     names.insert("Transform");
     names.insert("Medkit");
+    names.insert("AmmoBox");
     names.insert("MultiUse");
     names.insert("EditableCollider");
     names.insert("Wall");
@@ -124,11 +127,21 @@ pub struct Medkit {
     pub healing: f32,
 }
 
-#[derive(Bundle, Default)]
+#[derive(Bundle)]
 pub struct MedkitBlueprintBundle {
     pub transform: Transform,
     pub medkit: Medkit,
     pub multi_use: MultiUse,
+}
+
+impl Default for MedkitBlueprintBundle{
+    fn default() -> Self {
+        Self {
+            transform: Default::default(),
+            medkit: Medkit {healing: 50.0},
+            multi_use: MultiUse { remaining: 1 }
+        }
+    }
 }
 
 impl Blueprint for Medkit {
@@ -190,6 +203,90 @@ fn init_bp_medkit(
                         ..Default::default()
                     },
                     texture: assets.medkit.clone(),
+                    ..Default::default()
+                });
+        }
+    }
+}
+
+// AMMO BOXES
+
+#[derive(Default, Clone, Component, Reflect)]
+#[reflect(Component)]
+pub struct AmmoBox {
+    pub amount: i32,
+}
+
+#[derive(Bundle)]
+pub struct AmmoBoxBlueprintBundle {
+    pub transform: Transform,
+    pub ammo_box: AmmoBox,
+    pub multi_use: MultiUse,
+}
+
+impl Default for AmmoBoxBlueprintBundle{
+    fn default() -> Self {
+        Self {
+            transform: Default::default(),
+            ammo_box: AmmoBox {amount: 30 },
+            multi_use: MultiUse{ remaining: 1 }
+        }
+    }
+}
+
+impl Blueprint for AmmoBox {
+    const EDITOR_ID: &'static str = "AmmoBox";
+    const DEFAULT_Z: f32 = 1.0;
+    type BlueprintBundle = AmmoBoxBlueprintBundle;
+}
+
+fn init_bp_ammo_box(
+    mut commands: Commands,
+    q_bp: BlueprintQuery<AmmoBox>,
+    assets: Option<Res<GameAssets>>,
+) {
+    if let Some(assets) = assets {
+        for (e, _ammo_box, xf) in q_bp.query.iter() {
+            // trigger for ammo box
+            commands
+                .spawn()
+                .insert(GameCleanup)
+                .insert(Editable)
+                .insert(GlobalTransform::default())
+                .insert(*xf)
+                .insert(Trigger {
+                    player_detected: false,
+                    entities: vec![e],
+                })
+                .insert(RigidBody::Sensor)
+                .insert(
+                    CollisionLayers::none()
+                        .with_group(PhysLayer::PlayerTriggers)
+                        .with_masks(&[PhysLayer::Player]),
+                )
+                .insert(CollisionShape::Cuboid {
+                    half_extends: Vec3::new(20., 20., 1.),
+                    border_radius: None,
+                })
+                // hack to make spawning from editor work
+                .insert(NewlySpawned)
+                // medkit is child of sensor
+                .add_child(e);
+
+            // actual box
+            commands
+                .entity(e)
+                .insert(crate::scene_exporter::SaveSceneMarker)
+                // hack to make spawning from editor work
+                .remove::<NewlySpawned>()
+                // sprite stuff
+                .insert_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        custom_size: Some(Vec2::new(32., 32.)),
+                        color: Color::rgba(1.0, 1.0, 1.0, 0.7),
+                        ..Default::default()
+                    },
+                    texture: assets.ammo.clone(),
                     ..Default::default()
                 });
         }
@@ -320,3 +417,5 @@ pub fn collider_apply_sync<T: ColliderBehavior>(
         coll.sync_dimensions(edit, &mut cmd.entity(e));
     }
 }
+
+

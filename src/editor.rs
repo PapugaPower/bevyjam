@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use enum_iterator::IntoEnumIterator;
 use iyes_bevy_util::{despawn_with_recursive, despawn_with, remove_from_all};
 
-use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::Medkit};
+use crate::{AppState, FuckStages, ui::button_connector, game::blueprints::{Medkit, AmmoBox}};
 use crate::game::collider as gamecollider;
 
 use self::collider::DragHandle;
@@ -117,6 +117,7 @@ impl Plugin for DevEditorPlugin {
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::SpawnZone>))
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::WinZone>))
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
+                .with_system(button_connector.chain(ui::spawn_btn_handler::<AmmoBox>))
         );
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor).after("editorui")
@@ -126,6 +127,7 @@ impl Plugin for DevEditorPlugin {
                 .with_system(ui::add_spawn_button::<gamecollider::SpawnZone>)
                 .with_system(ui::add_spawn_button::<gamecollider::WinZone>)
                 .with_system(ui::add_spawn_button::<Medkit>)
+                .with_system(ui::add_spawn_button::<AmmoBox>)
         );
     }
 }

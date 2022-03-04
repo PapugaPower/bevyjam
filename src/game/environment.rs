@@ -8,6 +8,7 @@ use heron::prelude::*;
 pub mod barrel;
 pub mod door;
 pub mod medkit;
+pub mod ammo_box;
 
 pub struct InterationEvent {
     entity: Entity,
@@ -101,5 +102,16 @@ pub fn check_game_win(
             state.push(AppState::GameOver).unwrap();
             commands.insert_resource(GameResult::Win);
         }
+    }
+}
+
+#[derive(Component)]
+pub struct ReadyToDespawn;
+
+pub fn process_interactable_despawn(q: Query<Entity, With<ReadyToDespawn>>,
+                                    mut commands: Commands
+){
+    for entity in q.iter(){
+        commands.entity(entity).despawn();
     }
 }
