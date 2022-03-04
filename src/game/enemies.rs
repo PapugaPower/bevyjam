@@ -32,12 +32,12 @@ pub struct EnemyConfig {
 impl Default for EnemyConfig {
     fn default() -> Self {
         EnemyConfig {
-            max_count: 69,
+            max_count: 150,
             min_count: 8,
             count: 0,
-            min_distance: 800.0,
-            timer_fast: Timer::new(Duration::from_secs_f32(0.5), true),
-            timer_slow: Timer::new(Duration::from_secs_f32(1.5), true),
+            min_distance: 700.0,
+            timer_fast: Timer::new(Duration::from_secs_f32(0.8), true),
+            timer_slow: Timer::new(Duration::from_secs_f32(1.0), true),
         }
     }
 }
@@ -111,7 +111,7 @@ impl EnemyBundle {
             animation: AnimationBundle::from_animation_transform_size(animation, transform, size),
             enemy: Enemy,
             attack: EnemyAttack {
-                range: 50.0,
+                range: 70.0,
                 damage: 20.0,
                 timer: Timer::from_seconds(0.5, true),
             },

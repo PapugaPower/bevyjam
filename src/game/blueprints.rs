@@ -216,7 +216,7 @@ impl Default for AmmoBoxBlueprintBundle{
     fn default() -> Self {
         Self {
             transform: Default::default(),
-            ammo_box: AmmoBox {amount: 30 },
+            ammo_box: AmmoBox {amount: 40 },
             multi_use: MultiUse{ remaining: 1 }
         }
     }
