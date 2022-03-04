@@ -110,7 +110,7 @@ impl EnemyBundle {
             animation: AnimationBundle::from_animation_transform_size(animation, transform, size),
             enemy: Enemy,
             attack: EnemyAttack {
-                range: 3.0,
+                range: 50.0,
                 damage: 5.0,
             },
             health: Health {
@@ -503,6 +503,7 @@ pub fn spawn_zones(
     mut cfg: ResMut<EnemyConfig>,
     t: Res<Time>,
     animations: Res<EnemyAnimations>,
+    physics_world: PhysicsWorld
 ) {
     use bevy::core::FloatOrd;
 
@@ -523,7 +524,7 @@ pub fn spawn_zones(
         return;
     }
 
-    debug!("Spawning new enemy");
+    debug!("Trying to spawn new enemy.");
 
     let mut rng = rand::thread_rng();
 
@@ -541,6 +542,23 @@ pub fn spawn_zones(
         .filter(|(_e, pos)| pos.distance_squared(playerpos) > mindist2)
         .min_by_key(|(_e, pos)| FloatOrd(pos.distance_squared(playerpos)))
     {
+        let (_entity, zone_xf) = q_zone2.get(e).unwrap();
+        let shape = &CollisionShape::Sphere {radius: 100.0};
+        let hit = physics_world.shape_cast_with_filter(
+            shape,
+            zone_xf.translation,
+            Quat::IDENTITY,
+            Vec3::new(playerpos.x, playerpos.y, 0.0 ) - zone_xf.translation,
+            CollisionLayers::none()
+                .with_group(PhysLayer::Enemies)
+                .with_mask(PhysLayer::World),
+            |_entitity| true,
+        );
+
+        if let Some(collision) = hit {
+            return;
+        }
+        
         debug!("picked zone at {:?}", pos);
         let (area, _zone) = q_zone.get(e).unwrap();
         let x = rng.gen_range(-area.half_extends.x..area.half_extends.x);
