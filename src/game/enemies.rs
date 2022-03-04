@@ -105,6 +105,7 @@ impl Default for EnemyBundle {
     }
 }
 
+/*
 pub fn enemy_controller(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
@@ -168,6 +169,7 @@ pub fn enemy_controller(
         transform.translation += move_vector;
     }
 }
+*/
 
 /*
 pub fn enemy_spawn(

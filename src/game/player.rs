@@ -77,12 +77,6 @@ pub fn init_player(mut commands: Commands) {
         ))
         .insert_bundle(PlayerBundle::default())
         .insert_bundle(WeaponryBundle::default())
-        .insert(EnemyWave {
-            timer: Timer::from_seconds(5.0, true),
-            number: 10,
-            radius: 1000.0,
-            despawn_radius: 1500.0,
-        })
         .insert(RigidBody::KinematicPositionBased)
         .insert(
             CollisionLayers::none()
