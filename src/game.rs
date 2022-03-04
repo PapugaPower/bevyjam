@@ -120,6 +120,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(tick_game_timer)
                 .with_system(check_game_over)
                 .with_system(check_player_dead)
+                .with_system(check_game_win)
                 .with_system(door_interaction.after("trigger_interaction"))
                 .with_system(medkit_interaction.after("trigger_interaction"))
                 // spatial sound

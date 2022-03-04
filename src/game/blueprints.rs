@@ -20,16 +20,16 @@ use bevy::prelude::*;
 use bevy::utils::HashSet;
 use heron::*;
 
-use crate::FuckStages;
-use crate::editor::Editable;
-use crate::editor::NewlySpawned;
 use crate::editor::collider::ColliderEditorVisColor;
 use crate::editor::collider::EditableCollider;
+use crate::editor::Editable;
+use crate::editor::NewlySpawned;
+use crate::FuckStages;
 
-use super::GameAssets;
-use super::GameCleanup;
 use super::collider;
 use super::collider::ColliderKind;
+use super::GameAssets;
+use super::GameCleanup;
 
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
@@ -67,7 +67,7 @@ impl Plugin for BlueprintsPlugin {
                 .with_system(collider_apply_sync::<collider::Wall>)
                 .with_system(collider_apply_sync::<collider::HurtZone>)
                 .with_system(collider_apply_sync::<collider::WinZone>)
-                .with_system(collider_apply_sync::<collider::SpawnZone>)
+                .with_system(collider_apply_sync::<collider::SpawnZone>),
         );
     }
 }
@@ -230,12 +230,13 @@ impl ColliderBehavior for collider::Wall {
     const KINDENUM: ColliderKind = ColliderKind::Wall;
     const EDITOR_COLOR: Color = Color::rgba(1.0, 0.75, 0.5, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
-        cmd
-            .insert(GlobalTransform::default())
+        cmd.insert(GlobalTransform::default())
             .insert(RigidBody::Static)
-            .insert(CollisionLayers::none()
-                .with_group(PhysLayer::World)
-                .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]));
+            .insert(
+                CollisionLayers::none()
+                    .with_group(PhysLayer::World)
+                    .with_masks(&[PhysLayer::Player, PhysLayer::Enemies, PhysLayer::Bullets]),
+            );
     }
 }
 
@@ -249,8 +250,7 @@ impl ColliderBehavior for collider::HurtZone {
     const KINDENUM: ColliderKind = ColliderKind::HurtZone;
     const EDITOR_COLOR: Color = Color::rgba(1.0, 0.25, 0.0, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
-        cmd
-            .insert(GlobalTransform::default())
+        cmd.insert(GlobalTransform::default())
             .insert(Pulsing::from(self));
     }
     /// HurtZones need a DamageAreaShape instead of CollisionShape
@@ -271,9 +271,14 @@ impl ColliderBehavior for collider::WinZone {
     const KINDENUM: ColliderKind = ColliderKind::WinZone;
     const EDITOR_COLOR: Color = Color::rgba(0.25, 1.0, 0.5, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
-        cmd
-            // TODO: add any other stuff needed
-            .insert(GlobalTransform::default());
+        cmd.insert(GlobalTransform::default())
+            .insert(Trigger::default())
+            .insert(RigidBody::Sensor)
+            .insert(
+                CollisionLayers::none()
+                    .with_group(PhysLayer::PlayerTriggers)
+                    .with_masks(&[PhysLayer::Player]),
+            );
     }
 }
 
@@ -293,12 +298,10 @@ impl ColliderBehavior for collider::SpawnZone {
     }
 }
 
-fn init_bp_collider<T: ColliderBehavior>(
-    mut commands: Commands,
-    q_bp: BlueprintQuery<T>,
-) {
+fn init_bp_collider<T: ColliderBehavior>(mut commands: Commands, q_bp: BlueprintQuery<T>) {
     for (e, coll, _) in q_bp.query.iter() {
-        commands.entity(e)
+        commands
+            .entity(e)
             .insert(GameCleanup)
             // editor integration
             .insert(Editable)
@@ -310,13 +313,7 @@ fn init_bp_collider<T: ColliderBehavior>(
 }
 
 pub fn collider_apply_sync<T: ColliderBehavior>(
-    q: Query<(
-        Entity,
-        &T,
-        &EditableCollider,
-    ), (
-        Changed<EditableCollider>,
-    )>,
+    q: Query<(Entity, &T, &EditableCollider), (Changed<EditableCollider>,)>,
     mut cmd: Commands,
 ) {
     for (e, coll, edit) in q.iter() {

@@ -1,6 +1,7 @@
-use crate::game::damage::{Health, Pulsing};
-use crate::game::phys_layers::PhysLayer;
+use crate::game::collider::WinZone;
 use crate::game::player::Player;
+use crate::game::GameResult;
+use crate::AppState;
 use bevy::prelude::*;
 use heron::prelude::*;
 
@@ -12,7 +13,7 @@ pub struct InterationEvent {
     entity: Entity,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct Trigger {
     pub player_detected: bool,
     pub entities: Vec<Entity>,
@@ -90,43 +91,15 @@ pub fn triggir_timeout_process(time: Res<Time>, mut query_triggers: Query<&mut T
     }
 }
 
-pub fn debug_environment_damage_zones(mut commands: Commands) {
-    // explosive barrel
-    /*
-    let pos = Vec3::new(-150.0, 250.0, 0.0);
-    commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(100.0, 100.0)),
-                color: Color::rgb(0.1, 0.1, 0.8),
-                ..Default::default()
-            },
-            transform: Transform::from_translation(pos),
-            ..Default::default()
-        })
-        .insert(barrel::ExplosiveObjectState::NotDetonated)
-        .insert(Health {
-            current: 100.0,
-            max: 100.0,
-        })
-        .insert_bundle(PulsingBundle {
-            pulsing: Pulsing {
-                pulse_time: {
-                    let mut t = Timer::from_seconds(0.3, false);
-                    t.pause();
-                    t
-                },
-                damage: 10.0,
-            },
-            damage_area_shape: DamageAreaShape::Sphere { radius: 300.0 },
-            ..Default::default()
-        })
-        .insert(RigidBody::Dynamic)
-        .insert(CollisionShape::Sphere { radius: 50.0 })
-        .insert(
-            CollisionLayers::none()
-                .with_group(PhysLayer::World)
-                .with_masks(&[PhysLayer::Bullets, PhysLayer::Player, PhysLayer::Enemies]),
-        );
-        */
+pub fn check_game_win(
+    mut commands: Commands,
+    mut state: ResMut<State<AppState>>,
+    query_triggers: Query<&Trigger, With<WinZone>>,
+) {
+    for trigger in query_triggers.iter() {
+        if trigger.player_detected {
+            state.push(AppState::GameOver).unwrap();
+            commands.insert_resource(GameResult::Win);
+        }
+    }
 }
