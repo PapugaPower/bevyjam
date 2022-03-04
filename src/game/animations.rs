@@ -88,11 +88,11 @@ impl BulletsImpactAnimations {
                 texture_atlas: textures.add(TextureAtlas::from_grid(
                     assets.blood_splash.clone(),
                     Vec2::new(100.0, 100.0),
-                    5,
-                    5,
+                    3,
+                    3,
                 )),
                 animation: animations.add(
-                    SpriteSheetAnimation::from_range(0..=24, Duration::from_millis(20)).once(),
+                    SpriteSheetAnimation::from_range(0..=8, Duration::from_millis(20)).once(),
                 ),
             },
         }
@@ -283,7 +283,7 @@ pub fn animation_player_impact(
 ) {
     for event in events.iter() {
         let rotation = event.direction.y.atan2(event.direction.x) - std::f32::consts::FRAC_PI_2;
-        let transform = Transform::from_translation(event.position)
+        let mut transform = Transform::from_translation(event.position)
             .with_rotation(Quat::from_rotation_z(rotation));
         match event.surface {
             ImpactSurface::Player => {}
@@ -295,6 +295,7 @@ pub fn animation_player_impact(
                 ));
             }
             ImpactSurface::Monster => {
+                transform.scale = Vec3::new(1.5, 1.5, 1.0);
                 commands.spawn_bundle(AnimationBundle::from_animation_transform_size(
                     &impact_animations.monsters,
                     transform,
