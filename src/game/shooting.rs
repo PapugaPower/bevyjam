@@ -2,7 +2,7 @@ use crate::game::crosshair::Crosshair;
 use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
 use crate::game::enemies::Enemy;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::{Player, PlayerState, PlayerStateEnum};
+use crate::game::player::{Player, PlayerState, PlayerShootState};
 use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
@@ -162,7 +162,7 @@ pub fn player_shoot(
         }
 
         // animation
-        player_state.new = PlayerStateEnum::Shooting;
+        player_state.new.1 = PlayerShootState::Shooting;
 
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
@@ -298,6 +298,7 @@ pub fn player_shoot(
         // If the button is no longer pressed, then any clicks after are most likely intended for
         // shooting
         last_shoot.prevent_accidental_fire = false;
+        player_state.new.1 = PlayerShootState::Nothing;
     }
 }
 
@@ -367,7 +368,7 @@ pub fn gun_reload(
     // If a reload is in progress, try to complete it.
     if mag.current_reload > 0.0 {
         // animation
-        player_state.new = PlayerStateEnum::Reloading;
+        player_state.new.1 = PlayerShootState::Reloading;
 
         mag.current_reload += time.delta_seconds();
         if mag.current_reload > mag.reload_time {
@@ -382,7 +383,7 @@ pub fn gun_reload(
             spare_ammo.current -= fill;
         }
         return;
-    }
+    } 
 
     if keys.just_pressed(KeyCode::R) {
         if spare_ammo.current < 1 || mag.current == mag.max {

@@ -1,9 +1,8 @@
 use crate::game::environment::barrel::ExplosiveObjectState;
-use crate::game::player::{PlayerState, PlayerStateEnum};
+use crate::game::player::{PlayerLegs, PlayerMoveState, PlayerShootState, PlayerState};
 use crate::game::shooting::{BulletImpactEvent, ImpactSurface};
 use crate::game::GameAssets;
 use benimator::{Play, SpriteSheetAnimation};
-use bevy::ecs::entity;
 use bevy::prelude::*;
 use bevy::utils::Duration;
 
@@ -91,9 +90,8 @@ impl BulletsImpactAnimations {
                     3,
                     3,
                 )),
-                animation: animations.add(
-                    SpriteSheetAnimation::from_range(0..=8, Duration::from_millis(20)).once(),
-                ),
+                animation: animations
+                    .add(SpriteSheetAnimation::from_range(0..=8, Duration::from_millis(20)).once()),
             },
         }
     }
@@ -124,7 +122,7 @@ impl PlayerAnimations {
                 )),
                 animation: animations.add(SpriteSheetAnimation::from_range(
                     0..=19,
-                    Duration::from_millis(50),
+                    Duration::from_millis(30),
                 )),
             },
             idle: Animation {
@@ -227,12 +225,18 @@ pub fn animations_init(
         &mut textures,
         &mut animations,
     ));
-    println!("inserted animations");
 }
 
 pub fn animations_removal(
     mut commands: Commands,
-    animations: Query<Entity, (With<Handle<SpriteSheetAnimation>>, Without<Play>)>,
+    animations: Query<
+        Entity,
+        (
+            With<Handle<SpriteSheetAnimation>>,
+            Without<Play>,
+            Without<PlayerLegs>,
+        ),
+    >,
 ) {
     for entity in animations.iter() {
         commands.entity(entity).despawn();
@@ -240,32 +244,56 @@ pub fn animations_removal(
 }
 
 pub fn animation_player(
+    mut commands: Commands,
     animations: Res<PlayerAnimations>,
-    mut query_player: Query<(
-        &mut PlayerState,
-        &mut Handle<TextureAtlas>,
-        &mut TextureAtlasSprite,
-        &mut Handle<SpriteSheetAnimation>,
+    mut query_set: QuerySet<(
+        QueryState<(
+            &mut PlayerState,
+            &mut Handle<TextureAtlas>,
+            &mut TextureAtlasSprite,
+            &mut Handle<SpriteSheetAnimation>,
+        )>,
+        QueryState<(
+            Entity,
+            &mut PlayerLegs,
+            &mut Handle<TextureAtlas>,
+            &mut Handle<SpriteSheetAnimation>,
+        )>,
     )>,
 ) {
+    let mut query_playr_legs = query_set.q1();
+    let (legs, mut player_legs, mut legs_texture_atlas, mut legs_animation) =
+        query_playr_legs.single_mut();
+    if !player_legs.initialized {
+        *legs_texture_atlas = animations.legs.texture_atlas.clone();
+        *legs_animation = animations.legs.animation.clone();
+        player_legs.initialized = true;
+    }
+
+    let mut query_player = query_set.q0();
     let (mut state, mut texture_atlas, mut texture_atlas_sprite, mut animation) =
         query_player.single_mut();
     if state.changed() {
         println!("animation change: {:?}", state);
-        match state.new {
-            PlayerStateEnum::Idle => {
+        match state.new.0 {
+            PlayerMoveState::Idle => {
                 *texture_atlas = animations.idle.texture_atlas.clone();
                 *animation = animations.idle.animation.clone();
+                commands.entity(legs).remove::<Play>();
             }
-            PlayerStateEnum::Running => {
+            PlayerMoveState::Running => {
                 *texture_atlas = animations.running.texture_atlas.clone();
                 *animation = animations.running.animation.clone();
+                commands.entity(legs).insert(Play);
             }
-            PlayerStateEnum::Reloading => {
+        }
+        match state.new.1 {
+            PlayerShootState::Nothing => {}
+            PlayerShootState::Reloading => {
                 *texture_atlas = animations.reloading.texture_atlas.clone();
                 *animation = animations.reloading.animation.clone();
             }
-            PlayerStateEnum::Shooting => {
+            PlayerShootState::Shooting => {
                 *texture_atlas = animations.shooting.texture_atlas.clone();
                 *animation = animations.shooting.animation.clone();
             }
