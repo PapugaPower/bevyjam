@@ -262,20 +262,21 @@ pub fn enemy_die(
 }
 
 pub fn enemy_rotation(
-    mut q: Query<(&mut Transform, &EnemyTargetPos, Option<&EnemyWallAvoidance>)>,
+    mut q: Query<(&mut Transform, &EnemyTargetPos)>,
     t: Res<Time>,
 ) {
     const P: f32 = 2.0;
 
-    for (mut xf, target, avoid) in q.iter_mut() {
-        let mut avoid = avoid.map(|x| x.0).unwrap_or(0.0);
-        if avoid.is_nan() {
-            avoid = 0.0;
-        }
+    for (mut xf, target) in q.iter_mut() {
+        // let mut avoid = avoid.map(|x| x.0).unwrap_or(0.0);
+        // if avoid.is_nan() {
+        //     avoid = 0.0;
+        // }
         let dir_fwd = xf.local_x().truncate();
         let dir_tgt = target.0 - xf.translation.truncate();
         let angle = dir_fwd.angle_between(dir_tgt);
-        let rotation = Quat::from_rotation_z((dbg!(avoid) + angle * P) * t.delta_seconds());
+        // let rotation = Quat::from_rotation_z((avoid + angle * P) * t.delta_seconds());
+        let rotation = Quat::from_rotation_z((angle * P) * t.delta_seconds());
         xf.rotate(rotation);
     }
 }
@@ -346,10 +347,30 @@ pub fn enemy_walk(
     t: Res<Time>,
 ) {
     for mut xf in q.iter_mut() {
-        let mv = xf.local_x() * 69.69 * t.delta_seconds();
+        let mv = xf.local_x() * 96.96 * t.delta_seconds();
         xf.translation += mv;
     }
 }
+
+/*
+pub fn enemy_flock(
+    mut q: Query<&mut Transform, With<Enemy>>,
+    t: Res<Time>,
+) {
+    let enemypos: Vec<_> = q.iter().map(|xf| xf.translation.truncate()).collect();
+    for mut xf in q.iter_mut() {
+        let pos2 = xf.translation.truncate();
+        let mut accum = Vec2::ZERO;
+        for pos in enemypos.iter() {
+            if pos2 == *pos { continue; }
+            let distance = pos.distance(pos2);
+            accum += (pos2 - *pos).normalize() * (-distance * 0.001).exp();
+        }
+        xf.translation += (accum * t.delta_seconds()).extend(0.0);
+        dbg!(accum);
+    }
+}
+*/
 
 pub fn enemy_target_player(
     mut q_tgt: Query<&mut EnemyTargetEntity>,
