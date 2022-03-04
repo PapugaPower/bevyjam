@@ -583,5 +583,6 @@ pub fn spawn_zones(
         cfg.count += 1;
         cfg.timer_fast.reset();
         cfg.timer_slow.reset();
+        break;
     }
 }
