@@ -59,10 +59,9 @@ fn init_mainmenu(
             ..Default::default()
         },
         ..Default::default()
-    })//.with_children(|p| {
-        /*
+    }).with_children(|p| {
         p.spawn_bundle(NodeBundle {
-            material: assets.black.clone(),
+            color: UiColor(Color::NONE),
             style: Style {
                 flex_grow: 0.0,
                 flex_shrink: 1.0,
@@ -73,17 +72,16 @@ fn init_mainmenu(
             },
             ..Default::default()
         }).with_children(|p| {
-            p.spawn_bundle(ImageBundle {
-                style: Style {
-                    flex_grow: 0.0,
-                    flex_shrink: 1.0,
-                    ..Default::default()
-                },
-                material: logo.0.clone(),
+            p.spawn_bundle(TextBundle {
+                text: Text::with_section(
+                    crate::GAMENAME,
+                    uicfg.heading_style_text.clone(),
+                    Default::default()
+                ),
                 ..Default::default()
             });
         });
-        */
+    })
         /*
         p.spawn_bundle(NodeBundle {
             color: UiColor(Color::rgb(0.6, 0.6, 0.6)),

@@ -48,7 +48,7 @@ fn init_ui(
     nps: Res<UiNinepatches>,
     gres: Res<GameResult>,
 ) {
-    let dialog = cmd.spawn_bundle(NodeBundle {
+    let top = cmd.spawn_bundle(NodeBundle {
         color: UiColor(Color::rgb(0.5, 0.5, 0.5)),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
@@ -59,6 +59,20 @@ fn init_ui(
                 left: Val::Px(200.0),
                 right: Val::Px(200.0),
             },
+            align_self: AlignSelf::Center,
+            flex_direction: FlexDirection::ColumnReverse,
+            //align_items: AlignItems::Stretch,
+            justify_content: JustifyContent::Center,
+            ..Default::default()
+        },
+        ..Default::default()
+    }).insert(GameoverUiCleanup).id();
+
+    let dialog = cmd.spawn_bundle(NodeBundle {
+        color: UiColor(Color::rgb(0.5, 0.5, 0.5)),
+        style: Style {
+            size: Size::new(Val::Auto, Val::Auto),
+            margin: Rect::all(Val::Auto),
             align_self: AlignSelf::Center,
             flex_direction: FlexDirection::ColumnReverse,
             //align_items: AlignItems::Stretch,
@@ -161,6 +175,7 @@ fn init_ui(
     );
 
     cmd.entity(dialog).push_children(&[heading, middle, btnrow]);
+    cmd.entity(top).push_children(&[dialog]);
 }
 
 impl Btn for btn::ReplayGame {

@@ -8,6 +8,8 @@ use game::shooting::*;
 use enum_iterator::IntoEnumIterator;
 use iyes_bevy_util::remove_resource;
 
+const GAMENAME: &str = "Absconder";
+
 mod editor;
 mod game;
 mod ui;
@@ -51,9 +53,9 @@ fn main() {
         ..Default::default()
     });
     app.insert_resource(WindowDescriptor {
-        title: "Jam Game".into(),
+        title: GAMENAME.into(),
         vsync: true,
-        resizable: true,
+        resizable: false,
         width: 1280.,
         height: 960.,
         ..Default::default()

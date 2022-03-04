@@ -78,7 +78,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_update(self.state.clone())
                 .with_system(exit_game_on_esc)
                 .with_system(debug_enemy_spawn)
-                .with_system(enemy_debug_lines)
+                // .with_system(enemy_debug_lines)
                 // player movement
                 .with_system(crosshair_position_update_system.label("crosshair_update"))
                 .with_system(transfer_input_to_player_system.label("player_movement"))

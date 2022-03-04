@@ -51,7 +51,7 @@ struct Sc1Assets {
 fn init_game_timer(
     mut commands: Commands,
 ) {
-    let timer = Timer::from_seconds(3.0 * 60.0, false);
+    let timer = Timer::from_seconds(2.0 * 60.0, false);
     commands.insert_resource(GameTimer(timer));
 }
 

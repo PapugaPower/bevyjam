@@ -35,7 +35,7 @@ impl Default for EnemyConfig {
             max_count: 69,
             min_count: 8,
             count: 0,
-            min_distance: 500.0,
+            min_distance: 800.0,
             timer_fast: Timer::new(Duration::from_secs_f32(0.5), true),
             timer_slow: Timer::new(Duration::from_secs_f32(1.5), true),
         }
