@@ -21,6 +21,22 @@ pub struct AnimationBundle {
 }
 
 impl AnimationBundle {
+    pub fn from_default_with_transform_size(transform: Transform, size: Option<Vec2>) -> Self {
+        AnimationBundle {
+            sprite_sheet_bundle: SpriteSheetBundle {
+                sprite: TextureAtlasSprite {
+                    custom_size: size,
+                    ..Default::default()
+                },
+                transform,
+                ..Default::default()
+            },
+            animation_handle: Handle::default(),
+            play: Play,
+            cleanup: super::GameCleanup,
+        }
+    }
+
     pub fn from_animation_transform_size(
         animation: &Animation,
         transform: Transform,
@@ -162,6 +178,58 @@ impl PlayerAnimations {
     }
 }
 
+#[derive(Component)]
+pub struct ExplosionAnimations {
+    pub explosion: Animation,
+}
+
+impl ExplosionAnimations {
+    pub fn from_game_assets(
+        assets: &GameAssets,
+        textures: &mut Assets<TextureAtlas>,
+        animations: &mut Assets<SpriteSheetAnimation>,
+    ) -> Self {
+        Self {
+            explosion: Animation {
+                texture_atlas: textures.add(TextureAtlas::from_grid(
+                    assets.explosion.clone(),
+                    Vec2::new(124.0, 119.0),
+                    6,
+                    5,
+                )),
+                animation: animations.add(SpriteSheetAnimation::from_range(
+                    0..=29,
+                    Duration::from_millis(50),
+                )),
+            },
+        }
+    }
+}
+
+pub fn animations_init(
+    mut commands: Commands,
+    assets: Res<GameAssets>,
+    mut textures: ResMut<Assets<TextureAtlas>>,
+    mut animations: ResMut<Assets<SpriteSheetAnimation>>,
+) {
+    commands.insert_resource(PlayerAnimations::from_game_assets(
+        &assets,
+        &mut textures,
+        &mut animations,
+    ));
+    commands.insert_resource(BulletsImpactAnimations::from_game_assets(
+        &assets,
+        &mut textures,
+        &mut animations,
+    ));
+    commands.insert_resource(ExplosionAnimations::from_game_assets(
+        &assets,
+        &mut textures,
+        &mut animations,
+    ));
+    println!("inserted animations");
+}
+
 pub fn animations_removal(mut commands: Commands, animations: RemovedComponents<Play>) {
     for entity in animations.iter() {
         commands.entity(entity).despawn();
@@ -169,15 +237,15 @@ pub fn animations_removal(mut commands: Commands, animations: RemovedComponents<
 }
 
 pub fn animation_player(
+    animations: Res<PlayerAnimations>,
     mut query_player: Query<(
-        &PlayerAnimations,
         &mut PlayerState,
         &mut Handle<TextureAtlas>,
         &mut TextureAtlasSprite,
         &mut Handle<SpriteSheetAnimation>,
     )>,
 ) {
-    let (animations, mut state, mut texture_atlas, mut texture_atlas_sprite, mut animation) =
+    let (mut state, mut texture_atlas, mut texture_atlas_sprite, mut animation) =
         query_player.single_mut();
     if state.changed() {
         println!("animation change: {:?}", state);
@@ -208,9 +276,8 @@ pub fn animation_player(
 pub fn animation_player_impact(
     mut commands: Commands,
     mut events: EventReader<BulletImpactEvent>,
-    impact_animations: Query<&BulletsImpactAnimations>,
+    impact_animations: Res<BulletsImpactAnimations>,
 ) {
-    let animations = impact_animations.single();
     for event in events.iter() {
         let rotation = event.direction.y.atan2(event.direction.x) - std::f32::consts::FRAC_PI_2;
         let transform = Transform::from_translation(event.position)
@@ -219,14 +286,14 @@ pub fn animation_player_impact(
             ImpactSurface::Player => {}
             ImpactSurface::World => {
                 commands.spawn_bundle(AnimationBundle::from_animation_transform_size(
-                    &animations.world,
+                    &impact_animations.world,
                     transform,
                     None,
                 ));
             }
             ImpactSurface::Monster => {
                 commands.spawn_bundle(AnimationBundle::from_animation_transform_size(
-                    &animations.monsters,
+                    &impact_animations.monsters,
                     transform,
                     None,
                 ));
@@ -237,34 +304,19 @@ pub fn animation_player_impact(
 
 pub fn animation_explosive_objects(
     mut commands: Commands,
-    assets: Res<GameAssets>,
-    mut textures: ResMut<Assets<TextureAtlas>>,
-    mut animations: ResMut<Assets<SpriteSheetAnimation>>,
+    explosion_animations: Res<ExplosionAnimations>,
     query: Query<(Entity, &Transform, &ExplosiveObjectState), Without<TextureAtlasSprite>>,
 ) {
-    let animation_handle = animations.add(SpriteSheetAnimation::from_range(
-        0..=29,
-        Duration::from_millis(50),
-    ));
     for (entity, transform, state) in query.iter() {
         if let ExplosiveObjectState::Exploding(_) = state {
             commands
                 .entity(entity)
                 .remove_bundle::<SpriteBundle>()
-                .insert_bundle(SpriteSheetBundle {
-                    texture_atlas: textures.add(TextureAtlas::from_grid(
-                        assets.explosion.clone(),
-                        Vec2::new(124.0, 119.0),
-                        6,
-                        5,
-                    )),
-                    transform: *transform,
-                    ..Default::default()
-                })
-                // Insert the asset handle of the animation
-                .insert(animation_handle.clone())
-                .insert(Play)
-                .insert(super::GameCleanup);
+                .insert_bundle(AnimationBundle::from_animation_transform_size(
+                    &explosion_animations.explosion,
+                    *transform,
+                    None,
+                ));
         }
     }
 }

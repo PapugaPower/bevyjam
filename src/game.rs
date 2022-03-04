@@ -17,7 +17,6 @@ use bevy_kira_audio::{AudioChannel, AudioSource};
 use heron::RigidBody;
 use iyes_bevy_util::*;
 
-use crate::FuckStages;
 use crate::game::animations::*;
 use crate::game::audio2d::*;
 use crate::game::crosshair::*;
@@ -30,6 +29,7 @@ use crate::game::shooting::*;
 pub use crate::game::timer::*;
 use crate::util::MainCamera;
 use crate::AppState;
+use crate::FuckStages;
 use hints::*;
 
 pub mod sc1;
@@ -68,8 +68,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
             SystemSet::on_enter(self.state.clone())
                 .with_system(init_main_camera)
                 .with_system(setup_crosshair)
+                .with_system(animations_init)
                 .with_system(init_player)
-                .label("init_player")
                 .with_system(init_hints)
                 .with_system(set_cursor_visibility::<false>),
         );

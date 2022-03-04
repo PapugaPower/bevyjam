@@ -60,7 +60,8 @@ impl Default for PlayerBundle {
                 max: 200.,
             },
             state: PlayerState {
-                current: PlayerStateEnum::Idle,
+                // different states to trigger animation
+                current: PlayerStateEnum::Running,
                 new: PlayerStateEnum::Idle,
             },
             cleanup: super::GameCleanup,
@@ -68,45 +69,29 @@ impl Default for PlayerBundle {
     }
 }
 
-pub fn init_player(
-    mut commands: Commands,
-    assets: Option<Res<GameAssets>>,
-    mut textures: ResMut<Assets<TextureAtlas>>,
-    mut animations: ResMut<Assets<SpriteSheetAnimation>>,
-) {
-    if let Some(assets) = assets {
-        let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 0.0));
-        let player_animations =
-            PlayerAnimations::from_game_assets(&assets, &mut textures, &mut animations);
-        let _x = commands
-            .spawn_bundle(AnimationBundle::from_animation_transform_size(
-                &player_animations.idle,
-                player_transform,
-                Some(Vec2::new(64.0, 64.0)),
-            ))
-            .insert_bundle(PlayerBundle::default())
-            .insert_bundle(WeaponryBundle::default())
-            .insert(BulletsImpactAnimations::from_game_assets(
-                &assets,
-                &mut textures,
-                &mut animations,
-            ))
-            .insert(player_animations)
-            .insert(EnemyWave {
-                timer: Timer::from_seconds(5.0, true),
-                number: 10,
-                radius: 1000.0,
-                despawn_radius: 1500.0,
-            })
-            .insert(RigidBody::KinematicPositionBased)
-            .insert(
-                CollisionLayers::none()
-                    .with_group(PhysLayer::Player)
-                    .with_masks(&[PhysLayer::World, PhysLayer::PlayerTriggers]),
-            )
-            .insert(CollisionShape::Sphere { radius: 24.0 })
-            .insert(SpatialAudioReceptor);
-    }
+pub fn init_player(mut commands: Commands) {
+    let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 0.0));
+    let _x = commands
+        .spawn_bundle(AnimationBundle::from_default_with_transform_size(
+            player_transform,
+            Some(Vec2::new(64.0, 64.0)),
+        ))
+        .insert_bundle(PlayerBundle::default())
+        .insert_bundle(WeaponryBundle::default())
+        .insert(EnemyWave {
+            timer: Timer::from_seconds(5.0, true),
+            number: 10,
+            radius: 1000.0,
+            despawn_radius: 1500.0,
+        })
+        .insert(RigidBody::KinematicPositionBased)
+        .insert(
+            CollisionLayers::none()
+                .with_group(PhysLayer::Player)
+                .with_masks(&[PhysLayer::World, PhysLayer::PlayerTriggers]),
+        )
+        .insert(CollisionShape::Sphere { radius: 24.0 })
+        .insert(SpatialAudioReceptor);
 }
 
 pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input<KeyCode>>) {
