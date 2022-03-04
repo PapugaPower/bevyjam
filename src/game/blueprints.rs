@@ -272,7 +272,6 @@ impl ColliderBehavior for collider::WinZone {
     const EDITOR_COLOR: Color = Color::rgba(0.25, 1.0, 0.5, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
         cmd
-            // the CollisionShape will be automatically inserted by `game::collider::collider_apply_sync`
             // TODO: add any other stuff needed
             .insert(GlobalTransform::default());
     }
@@ -289,7 +288,6 @@ impl ColliderBehavior for collider::SpawnZone {
     const EDITOR_COLOR: Color = Color::rgba(0.25, 0.5, 1.0, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
         cmd
-            // the CollisionShape will be automatically inserted by `game::collider::collider_apply_sync`
             // TODO: add any other stuff needed
             .insert(GlobalTransform::default());
     }
