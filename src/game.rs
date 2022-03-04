@@ -22,7 +22,7 @@ use crate::game::audio2d::*;
 use crate::game::crosshair::*;
 use crate::game::damage::*;
 use crate::game::enemies::*;
-use crate::game::environment::{barrel::*, door::*, medkit::*, ammo_box::*, *};
+use crate::game::environment::{ammo_box::*, barrel::*, door::*, medkit::*, *};
 use crate::game::main_camera::*;
 use crate::game::player::*;
 use crate::game::shooting::*;
@@ -79,10 +79,15 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(debug_enemy_spawn)
                 .with_system(enemy_debug_lines)
                 // player movement
-                .with_system(crosshair_position_update_system)
-                .with_system(recalculate_camera_desination_system)
-                .with_system(refresh_camera_position_system)
+                .with_system(crosshair_position_update_system.label("crosshair_update"))
                 .with_system(transfer_input_to_player_system.label("player_movement"))
+                .with_system(
+                    recalculate_camera_desination_system
+                        .label("recalculate_camera")
+                        .after("crosshair_update")
+                        .after("player_movement"),
+                )
+                .with_system(refresh_camera_position_system.after("recalculate_camera"))
                 .with_system(print_player_position)
                 // enemies
                 //.with_system(enemy_controller.label("enemy_controller"))
@@ -109,7 +114,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                     process_damage
                         .label("damage")
                         .after("projectiles")
-                        .after("pulses")
+                        .after("pulses"),
                 )
                 // animation
                 .with_system(animations_removal)
@@ -138,7 +143,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(spatial_audio.after("spatial_audio_added"))
                 .with_system(spatial_audio_changed.after("spatial_audio_added"))
                 .with_system(spatial_audio_added.label("spatial_audio_added"))
-                .with_system(spatial_audio_removed)
+                .with_system(spatial_audio_removed),
         );
         app.add_system_set(
             SystemSet::on_exit(self.state.clone())
