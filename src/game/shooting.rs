@@ -105,7 +105,7 @@ impl Default for WeaponryBundle {
         Self {
             weapon: Weapon {
                 ammo_type: AmmoType::Projectile,
-                damage: 26.0,
+                damage: 29.0,
                 fire_rate: 1.0 / 10.0,
                 projectile_speed: 2000.0,
                 projectile_life_time: 1.0,
@@ -116,9 +116,9 @@ impl Default for WeaponryBundle {
             },
             spare_ammo: SpareAmmo { current: 40 },
             weapon_magazine: WeaponMagazine {
-                current: 14,
-                max: 20,
-                reload_time: 2.0,
+                current: 30,
+                max: 30,
+                reload_time: 1.5,
                 current_reload: 0.0,
             },
             last_shoot_time: LastShootTime {

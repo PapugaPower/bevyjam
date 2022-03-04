@@ -34,7 +34,7 @@ pub struct EnemyTargetLastSeen(Timer);
 pub struct EnemyTargetScanning(f64, bool, bool);
 
 #[derive(Component)]
-pub struct EnemyWallAvoidance(f32);
+pub struct EnemyWallAvoidance(Quat);
 
 impl EnemyTargetScanning {
     fn new(secs_since_startup: f64) -> EnemyTargetScanning {
@@ -264,6 +264,7 @@ pub fn enemy_die(
 pub fn enemy_rotation(
     mut q: Query<(&mut Transform, &EnemyTargetPos)>,
     t: Res<Time>,
+    mut commands: Commands
 ) {
     const P: f32 = 2.0;
 
@@ -281,8 +282,9 @@ pub fn enemy_rotation(
     }
 }
 
-pub fn enemy_line_of_sight(
+pub fn enemy_player_search(
     mut commands: Commands,
+
     mut q_enemy: Query<(Entity, &Transform, &mut EnemyTargetLastSeen, &mut EnemyTargetPos, Option<&EnemyTargetScanning>)>,
     q_player: Query<Entity, With<Player>>,
     q_wall: Query<Entity, With<Wall>>,
@@ -293,13 +295,24 @@ pub fn enemy_line_of_sight(
     for (enemy, enemy_xf, mut lastseen, mut pos, scanning) in q_enemy.iter_mut() {
         lastseen.0.tick(t.delta());
         let raycast = physics_world.ray_cast_with_filter(
-            enemy_xf.translation, enemy_xf.local_x() * 2000.0, true,
+            enemy_xf.translation, enemy_xf.local_x() * 200.0, true,
             CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
                 .with_masks(&[PhysLayer::World, PhysLayer::Player]),
             |_entitity| true,
         );
         if let Some(coll) = raycast {
+            let direction = coll.collision_point - enemy_xf.translation;
+            let distance = (coll.collision_point - enemy_xf.translation).length();
+            if q_wall.get(coll.entity).is_ok() {
+                let cross = coll.normal.cross(Vec3::Z);
+                let deflection = cross * cross.dot(direction);
+                let rot = Quat::from_rotation_arc(direction.normalize(), (deflection + direction).normalize());
+                lines.line_colored(coll.collision_point, coll.collision_point + deflection, 0.0, Color::RED);
+                commands.entity(enemy).insert(EnemyWallAvoidance(rot));
+            }
+            
+            
             /*
             let distance = (coll.collision_point - enemy_xf.translation).length();
             if q_wall.get(coll.entity).is_ok() {
@@ -343,12 +356,52 @@ pub fn enemy_line_of_sight(
 }
 
 pub fn enemy_walk(
-    mut q: Query<(&mut Transform), With<Enemy>>,
+    mut q_set: QuerySet<(
+        QueryState<&mut Transform, With<Enemy>>,
+        QueryState<&Transform, With<Player>>
+    )>,
     t: Res<Time>,
+    physics_world: PhysicsWorld,
 ) {
-    for mut xf in q.iter_mut() {
-        let mv = xf.local_x() * 96.96 * t.delta_seconds();
-        xf.translation += mv;
+    
+    let mut player_pos = Vec3::ZERO;
+    for p in q_set.q1().iter() {
+        player_pos = p.translation;
+    }
+    
+    for mut xf in q_set.q0().iter_mut() {
+        let to_player:Vec3 = player_pos - xf.translation;
+        if to_player.length_squared() < 50.0*50.0 {
+            let direction = player_pos - xf.translation;
+            let angle = direction.y.atan2(direction.x);
+            xf.rotation = Quat::from_axis_angle(Vec3::Z, angle);
+            return;
+        }
+        let mut final_movement_vector = to_player.normalize() * 469.69 * t.delta_seconds();
+        for iter in 0..4 {
+            let hit = physics_world.ray_cast_with_filter(
+                xf.translation,
+                final_movement_vector * 5.0,
+                true,
+                CollisionLayers::none()
+                    .with_group(PhysLayer::Enemies)
+                    .with_mask(PhysLayer::World),
+                |_entitity| true,
+            );
+
+            if let Some(collision) = hit {
+                if iter == 3 {
+                    final_movement_vector = Vec3::ZERO;
+                    break;
+                }
+                let cross = collision.normal.cross(Vec3::Z);
+                final_movement_vector = cross * cross.dot(final_movement_vector);
+            }
+        }
+        let direction = player_pos - xf.translation;
+        let angle = direction.y.atan2(direction.x);
+        xf.rotation = Quat::from_axis_angle(Vec3::Z, angle);
+        xf.translation += final_movement_vector;
     }
 }
 
