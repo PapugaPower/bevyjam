@@ -49,6 +49,7 @@ pub struct Enemy;
 pub struct EnemyAttack {
     pub range: f32,
     pub damage: f32,
+    pub timer: Timer,
 }
 
 #[derive(Component)]
@@ -111,7 +112,8 @@ impl EnemyBundle {
             enemy: Enemy,
             attack: EnemyAttack {
                 range: 50.0,
-                damage: 5.0,
+                damage: 20.0,
+                timer: Timer::from_seconds(0.5, true),
             },
             health: Health {
                 max: 69.0,
@@ -233,10 +235,11 @@ pub fn enemy_despawn(
 */
 
 pub fn enemy_damage(
+    time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
     mut query: QuerySet<(
         QueryState<(Entity, &Transform), With<Player>>,
-        QueryState<(&EnemyAttack, &Transform), With<Enemy>>,
+        QueryState<(&mut EnemyAttack, &Transform), With<Enemy>>,
     )>,
 ) {
     let (player, player_position) = {
@@ -244,16 +247,19 @@ pub fn enemy_damage(
         (p, t.translation)
     };
 
-    for (attack, transform) in query.q1().iter() {
+    for (mut attack, transform) in query.q1().iter_mut() {
         // damage check
         let direction = player_position - transform.translation;
         let distance = direction.length();
         if distance <= attack.range {
-            damage_event.send(DamageEvent {
-                entity: player,
-                source: DamageSource::Enemy,
-                damage: attack.damage,
-            });
+            attack.timer.tick(time.delta());
+            if attack.timer.finished() {
+                damage_event.send(DamageEvent {
+                    entity: player,
+                    source: DamageSource::Enemy,
+                    damage: attack.damage,
+                });
+            }
         }
     }
 }
