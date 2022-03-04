@@ -54,6 +54,9 @@ features = ["dynamic_assets"]
 [dependencies.bevy_ninepatch]
 git = "https://github.com/PapugaPower/bevy_ninepatch"
 
+[dependencies.bevy_prototype_debug_lines]
+git = "https://github.com/PapugaPower/bevy_debug_lines"
+
 [dependencies.heron]
 git = "https://github.com/PapugaPower/heron"
 features = ["2d"]

@@ -93,7 +93,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             custom_size: Some(Vec2::new(1920.0, 1080.0)),
             ..Default::default()
         },
-        transform: Transform::from_xyz(-2500.0, 800.0, -1.0),
+        transform: Transform::from_xyz(-2800.0, 800.0, -1.0),
         global_transform: Default::default(),
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),

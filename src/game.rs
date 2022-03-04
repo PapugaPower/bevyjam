@@ -76,6 +76,8 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         let _x = app.add_system_set(
             SystemSet::on_update(self.state.clone())
                 .with_system(exit_game_on_esc)
+                .with_system(debug_enemy_spawn)
+                .with_system(enemy_debug_lines)
                 // player movement
                 .with_system(crosshair_position_update_system)
                 .with_system(recalculate_camera_desination_system)
@@ -83,9 +85,14 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(transfer_input_to_player_system.label("player_movement"))
                 .with_system(print_player_position)
                 // enemies
-                .with_system(enemy_controller.label("enemy_controller"))
-                .with_system(enemy_spawn)
-                .with_system(enemy_despawn)
+                //.with_system(enemy_controller.label("enemy_controller"))
+                .with_system(enemy_die)
+                .with_system(enemy_target_entity)
+                .with_system(enemy_rotation)
+                .with_system(enemy_line_of_sight)
+                .with_system(enemy_target_scan)
+                // .with_system(enemy_spawn)
+                // .with_system(enemy_despawn)
                 // shooting
                 .with_system(player_shoot.label("player_shoot").after("player_movement"))
                 .with_system(projectiles_controller.label("projectiles"))

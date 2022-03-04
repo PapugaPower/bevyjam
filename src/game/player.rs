@@ -3,7 +3,6 @@ use super::shooting::WeaponryBundle;
 use super::{GameAssets, SpatialAudioReceptor};
 use crate::game::animations::{BulletsImpactAnimations, PlayerAnimations};
 use crate::game::damage::Health;
-use crate::game::enemies::EnemyWave;
 use crate::game::phys_layers::PhysLayer;
 use crate::util::WorldCursor;
 use crate::AppState;
@@ -88,7 +87,7 @@ pub fn init_player(mut commands: Commands) {
         .insert(
             CollisionLayers::none()
                 .with_group(PhysLayer::Player)
-                .with_masks(&[PhysLayer::World, PhysLayer::PlayerTriggers]),
+                .with_masks(&[PhysLayer::World, PhysLayer::PlayerTriggers, PhysLayer::Enemies]),
         )
         .insert(CollisionShape::Sphere { radius: 24.0 })
         .insert(SpatialAudioReceptor);
