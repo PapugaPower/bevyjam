@@ -393,6 +393,8 @@ impl ColliderBehavior for collider::SpawnZone {
             // TODO: add any other stuff needed
             .insert(GlobalTransform::default());
     }
+    fn sync_dimensions(&self, _edit: &EditableCollider, _cmd: &mut EntityCommands) {
+    }
 }
 
 fn init_bp_collider<T: ColliderBehavior>(mut commands: Commands, q_bp: BlueprintQuery<T>) {

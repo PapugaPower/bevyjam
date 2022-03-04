@@ -57,6 +57,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
     fn build(&self, app: &mut App) {
         app.insert_resource(AudioChannelPool::default());
         app.insert_resource(GameAudioChannel(AudioChannel::new("game".into())));
+        app.init_resource::<EnemyConfig>();
         // add event types
         app.add_event::<DamageEvent>();
         app.add_event::<InterationEvent>();
@@ -91,6 +92,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(print_player_position)
                 // enemies
                 //.with_system(enemy_controller.label("enemy_controller"))
+                .with_system(spawn_zones)
                 .with_system(enemy_die.after("damage"))
                 //.with_system(enemy_target_entity)
                 //.with_system(enemy_rotation)

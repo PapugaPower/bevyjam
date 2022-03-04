@@ -1,16 +1,45 @@
 use std::time::Duration;
 
+use crate::editor::collider::EditableCollider;
 use crate::game::damage::{DamageEvent, DamageSource, Health};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use crate::util::WorldCursor;
+use bevy::prelude::Transform;
 use bevy::{prelude::*, transform};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use bevy_prototype_debug_lines::*;
 use rand::prelude::*;
 
-use super::collider::Wall;
+use super::collider::{Wall, SpawnZone};
+
+/// Parameters for controlling the spawning of enemies
+pub struct EnemyConfig {
+    /// no more enemies will be spawned if there are this many already
+    pub max_count: u32,
+    /// use the fast timer below this, slow timer above this
+    pub min_count: u32,
+    /// min distance from player
+    pub min_distance: f32,
+    /// current count
+    count: u32,
+    pub timer_fast: Timer,
+    pub timer_slow: Timer,
+}
+
+impl Default for EnemyConfig {
+    fn default() -> Self {
+        EnemyConfig {
+            max_count: 69,
+            min_count: 8,
+            count: 0,
+            min_distance: 500.0,
+            timer_fast: Timer::new(Duration::from_secs_f32(0.5), true),
+            timer_slow: Timer::new(Duration::from_secs_f32(1.5), true),
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct Enemy;
@@ -442,5 +471,68 @@ pub fn debug_enemy_spawn(
     if mb.just_pressed(MouseButton::Middle) {
         commands.spawn_bundle(EnemyBundle::default())
             .insert(Transform::from_translation(crs.0.extend(0.0)));
+    }
+}
+
+pub fn spawn_zones(
+    mut commands: Commands,
+    q_player: Query<&GlobalTransform, With<Player>>,
+    q_zone: Query<(&EditableCollider, &SpawnZone)>,
+    q_zone2: Query<(Entity, &GlobalTransform), With<SpawnZone>>,
+    mut cfg: ResMut<EnemyConfig>,
+    t: Res<Time>,
+) {
+    use bevy::core::FloatOrd;
+
+    cfg.timer_fast.tick(t.delta());
+    cfg.timer_slow.tick(t.delta());
+
+    let timer;
+
+    if cfg.count < cfg.min_count {
+        timer = cfg.timer_fast.finished();
+    } else if cfg.count < cfg.max_count {
+        timer = cfg.timer_slow.finished();
+    } else {
+        return;
+    }
+
+    if !timer {
+        return;
+    }
+
+    debug!("Spawning new enemy");
+
+    let mut rng = rand::thread_rng();
+
+    let mindist2 = cfg.min_distance * cfg.min_distance;
+    let playerpos = q_player.single().translation.truncate();
+
+    // let mut zones: Vec<_> = q_zone2.iter().map(|(e, xf)| (e, xf.translation.truncate())).collect();
+    // sort zones by distance to the player
+    // zones.sort_unstable_by_key(|(e, pos)| FloatOrd(pos.distance_squared(playerpos)));
+
+    // find the closest zone to the player, above the min spawn distance
+    if let Some((e, pos)) = q_zone2.iter()
+        .map(|(e, xf)| (e, xf.translation.truncate()))
+        .filter(|(_e, pos)| pos.distance_squared(playerpos) > mindist2)
+        .min_by_key(|(_e, pos)| FloatOrd(pos.distance_squared(playerpos)))
+    {
+        debug!("picked zone at {:?}", pos);
+        let (area,  _zone) = q_zone.get(e).unwrap();
+        let x = rng.gen_range(-area.half_extends.x .. area.half_extends.x);
+        let y = rng.gen_range(-area.half_extends.y .. area.half_extends.y);
+        let spawnpos = Vec3::new(x, y, 0.0);
+
+        let (_, xf) = q_zone2.get(e).unwrap();
+        let mat = xf.compute_matrix();
+        let spawnpos = mat.transform_point3(spawnpos);
+
+        commands.spawn_bundle(EnemyBundle::default())
+            .insert(Transform::from_translation(spawnpos));
+
+        cfg.count += 1;
+        cfg.timer_fast.reset();
+        cfg.timer_slow.reset();
     }
 }
