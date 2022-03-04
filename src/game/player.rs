@@ -77,7 +77,7 @@ impl Default for PlayerBundle {
 }
 
 pub fn init_player(mut commands: Commands) {
-    let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 1.0));
+    let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 2.0));
     let _x = commands
         .spawn_bundle(AnimationBundle::from_default_with_transform_size(
             player_transform,
