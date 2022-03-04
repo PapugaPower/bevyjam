@@ -187,6 +187,8 @@ pub struct GameAssets {
     pub hit_0: Handle<Image>,
     #[asset(key = "animation.hit_1")]
     pub hit_1: Handle<Image>,
+    #[asset(key = "enemy.move")]
+    pub enemy_move: Handle<Image>,
     #[asset(key = "audio.smg_shot")]
     pub smg_shot_audio: Handle<AudioSource>,
     #[asset(path = "audio/world_impacts", folder)]

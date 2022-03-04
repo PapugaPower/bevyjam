@@ -1,18 +1,19 @@
 use std::time::Duration;
 
 use crate::editor::collider::EditableCollider;
-use crate::game::damage::{DamageEvent, DamageSource, Health};
+use crate::game::animations::{Animation, AnimationBundle, EnemyAnimations};
+use crate::game::damage::Health;
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use crate::util::WorldCursor;
 use bevy::prelude::Transform;
-use bevy::{prelude::*, transform};
-use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
-use heron::{CollisionLayers, CollisionShape, RigidBody};
+use bevy::prelude::*;
 use bevy_prototype_debug_lines::*;
+use heron::rapier_plugin::PhysicsWorld;
+use heron::{CollisionLayers, CollisionShape, RigidBody};
 use rand::prelude::*;
 
-use super::collider::{Wall, SpawnZone};
+use super::collider::{SpawnZone, Wall};
 
 /// Parameters for controlling the spawning of enemies
 pub struct EnemyConfig {
@@ -85,9 +86,7 @@ impl EnemyTargetScanning {
 pub struct EnemyBundle {
     // include base bundle for rendering
     #[bundle]
-    sprite: SpriteBundle,
-    // cleanup marker
-    cleanup: super::GameCleanup,
+    animation: AnimationBundle,
     // our game behaviors
     enemy: Enemy,
     attack: EnemyAttack,
@@ -101,18 +100,14 @@ pub struct EnemyBundle {
     phys_shape: CollisionShape,
 }
 
-impl Default for EnemyBundle {
-    fn default() -> EnemyBundle {
+impl EnemyBundle {
+    pub fn from_animation_transform_size(
+        animation: &Animation,
+        transform: Transform,
+        size: Option<Vec2>,
+    ) -> EnemyBundle {
         EnemyBundle {
-            sprite: SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2::new(50.0, 50.0)),
-                    color: Color::rgb(1.0, 0.0, 0.1),
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-            cleanup: super::GameCleanup,
+            animation: AnimationBundle::from_animation_transform_size(animation, transform, size),
             enemy: Enemy,
             attack: EnemyAttack {
                 range: 3.0,
@@ -129,7 +124,7 @@ impl Default for EnemyBundle {
             phys_layers: CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
                 .with_masks(&[PhysLayer::World, PhysLayer::Player, PhysLayer::Enemies]),
-            phys_shape: CollisionShape::Sphere { radius: 25.0 }
+            phys_shape: CollisionShape::Sphere { radius: 25.0 },
         }
     }
 }
@@ -243,7 +238,12 @@ pub fn enemy_debug_lines(
 ) {
     for (xf, tgt) in q.iter() {
         lines.line(xf.translation, xf.translation + xf.local_x() * 200.0, 0.0);
-        lines.line_colored(xf.translation, tgt.0.extend(xf.translation.z), 0.0, Color::GREEN);
+        lines.line_colored(
+            xf.translation,
+            tgt.0.extend(xf.translation.z),
+            0.0,
+            Color::GREEN,
+        );
     }
 }
 
@@ -293,7 +293,7 @@ pub fn enemy_die(
 pub fn enemy_rotation(
     mut q: Query<(&mut Transform, &EnemyTargetPos)>,
     t: Res<Time>,
-    mut commands: Commands
+    mut commands: Commands,
 ) {
     const P: f32 = 2.0;
 
@@ -314,7 +314,13 @@ pub fn enemy_rotation(
 pub fn enemy_player_search(
     mut commands: Commands,
 
-    mut q_enemy: Query<(Entity, &Transform, &mut EnemyTargetLastSeen, &mut EnemyTargetPos, Option<&EnemyTargetScanning>)>,
+    mut q_enemy: Query<(
+        Entity,
+        &Transform,
+        &mut EnemyTargetLastSeen,
+        &mut EnemyTargetPos,
+        Option<&EnemyTargetScanning>,
+    )>,
     q_player: Query<Entity, With<Player>>,
     q_wall: Query<Entity, With<Wall>>,
     physics_world: PhysicsWorld,
@@ -324,7 +330,9 @@ pub fn enemy_player_search(
     for (enemy, enemy_xf, mut lastseen, mut pos, scanning) in q_enemy.iter_mut() {
         lastseen.0.tick(t.delta());
         let raycast = physics_world.ray_cast_with_filter(
-            enemy_xf.translation, enemy_xf.local_x() * 200.0, true,
+            enemy_xf.translation,
+            enemy_xf.local_x() * 200.0,
+            true,
             CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
                 .with_masks(&[PhysLayer::World, PhysLayer::Player]),
@@ -336,12 +344,19 @@ pub fn enemy_player_search(
             if q_wall.get(coll.entity).is_ok() {
                 let cross = coll.normal.cross(Vec3::Z);
                 let deflection = cross * cross.dot(direction);
-                let rot = Quat::from_rotation_arc(direction.normalize(), (deflection + direction).normalize());
-                lines.line_colored(coll.collision_point, coll.collision_point + deflection, 0.0, Color::RED);
+                let rot = Quat::from_rotation_arc(
+                    direction.normalize(),
+                    (deflection + direction).normalize(),
+                );
+                lines.line_colored(
+                    coll.collision_point,
+                    coll.collision_point + deflection,
+                    0.0,
+                    Color::RED,
+                );
                 commands.entity(enemy).insert(EnemyWallAvoidance(rot));
             }
-            
-            
+
             /*
             let distance = (coll.collision_point - enemy_xf.translation).length();
             if q_wall.get(coll.entity).is_ok() {
@@ -362,42 +377,43 @@ pub fn enemy_player_search(
             }
             */
             if q_player.get(coll.entity).is_ok() {
-                commands.entity(enemy)
+                commands
+                    .entity(enemy)
                     .remove::<EnemyTargetScanning>()
                     .insert(EnemyTargetEntity(coll.entity));
                 lastseen.0.reset();
             } else {
                 if lastseen.0.finished() && scanning.is_none() {
-                    commands.entity(enemy)
+                    commands
+                        .entity(enemy)
                         .insert(EnemyTargetScanning::new(t.seconds_since_startup()))
                         .remove::<EnemyTargetEntity>();
                 }
             }
         } else {
             if lastseen.0.finished() && scanning.is_none() {
-                commands.entity(enemy)
+                commands
+                    .entity(enemy)
                     .insert(EnemyTargetScanning::new(t.seconds_since_startup()))
                     .remove::<EnemyTargetEntity>();
             }
         }
-
     }
 }
 
 pub fn enemy_walk(
     mut q_set: QuerySet<(
         QueryState<&mut Transform, With<Enemy>>,
-        QueryState<&Transform, With<Player>>
+        QueryState<&Transform, With<Player>>,
     )>,
     t: Res<Time>,
     physics_world: PhysicsWorld,
 ) {
-    
     let mut player_pos = Vec3::ZERO;
     for p in q_set.q1().iter() {
         player_pos = p.translation;
     }
-    
+
     for mut xf in q_set.q0().iter_mut() {
         let to_player:Vec3 = player_pos - xf.translation;
         if to_player.length_squared() < 45.0*45.0 {
@@ -428,7 +444,8 @@ pub fn enemy_walk(
             }
         }
         let direction = player_pos - xf.translation;
-        let angle = direction.y.atan2(direction.x);
+        // fixes rotation
+        let angle = direction.y.atan2(direction.x) - std::f32::consts::FRAC_PI_2;
         xf.rotation = Quat::from_axis_angle(Vec3::Z, angle);
         xf.translation += final_movement_vector;
     }
@@ -467,10 +484,14 @@ pub fn debug_enemy_spawn(
     mut commands: Commands,
     crs: Res<WorldCursor>,
     mb: Res<Input<MouseButton>>,
+    animations: Res<EnemyAnimations>,
 ) {
     if mb.just_pressed(MouseButton::Middle) {
-        commands.spawn_bundle(EnemyBundle::default())
-            .insert(Transform::from_translation(crs.0.extend(0.0)));
+        commands.spawn_bundle(EnemyBundle::from_animation_transform_size(
+            &animations.movement,
+            Transform::from_translation(crs.0.extend(0.0)),
+            None,
+        ));
     }
 }
 
@@ -481,6 +502,7 @@ pub fn spawn_zones(
     q_zone2: Query<(Entity, &GlobalTransform), With<SpawnZone>>,
     mut cfg: ResMut<EnemyConfig>,
     t: Res<Time>,
+    animations: Res<EnemyAnimations>,
 ) {
     use bevy::core::FloatOrd;
 
@@ -513,23 +535,27 @@ pub fn spawn_zones(
     // zones.sort_unstable_by_key(|(e, pos)| FloatOrd(pos.distance_squared(playerpos)));
 
     // find the closest zone to the player, above the min spawn distance
-    if let Some((e, pos)) = q_zone2.iter()
+    if let Some((e, pos)) = q_zone2
+        .iter()
         .map(|(e, xf)| (e, xf.translation.truncate()))
         .filter(|(_e, pos)| pos.distance_squared(playerpos) > mindist2)
         .min_by_key(|(_e, pos)| FloatOrd(pos.distance_squared(playerpos)))
     {
         debug!("picked zone at {:?}", pos);
-        let (area,  _zone) = q_zone.get(e).unwrap();
-        let x = rng.gen_range(-area.half_extends.x .. area.half_extends.x);
-        let y = rng.gen_range(-area.half_extends.y .. area.half_extends.y);
+        let (area, _zone) = q_zone.get(e).unwrap();
+        let x = rng.gen_range(-area.half_extends.x..area.half_extends.x);
+        let y = rng.gen_range(-area.half_extends.y..area.half_extends.y);
         let spawnpos = Vec3::new(x, y, 0.0);
 
         let (_, xf) = q_zone2.get(e).unwrap();
         let mat = xf.compute_matrix();
         let spawnpos = mat.transform_point3(spawnpos);
 
-        commands.spawn_bundle(EnemyBundle::default())
-            .insert(Transform::from_translation(spawnpos));
+        commands.spawn_bundle(EnemyBundle::from_animation_transform_size(
+            &animations.movement,
+            Transform::from_translation(spawnpos),
+            None,
+        ));
 
         cfg.count += 1;
         cfg.timer_fast.reset();
