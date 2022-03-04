@@ -1,9 +1,8 @@
-use crate::game::animations::ShootingAnimationState;
 use crate::game::crosshair::Crosshair;
 use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
 use crate::game::enemies::Enemy;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::Player;
+use crate::game::player::{Player, PlayerState, PlayerStateEnum};
 use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
@@ -33,9 +32,9 @@ pub enum ImpactSurface {
 #[derive(Component)]
 pub struct LastShootTime {
     pub time: f32,
-	/// Set to true at the start of the game so that no bullets are fired when the player is still
-	/// clicking (just after pressing the "start scenario" button).
-	prevent_accidental_fire: bool,
+    ///// Set to true at the start of the game so that no bullets are fired when the player is still
+    ///// clicking (just after pressing the "start scenario" button).
+    prevent_accidental_fire: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -122,7 +121,10 @@ impl Default for WeaponryBundle {
                 reload_time: 2.0,
                 current_reload: 0.0,
             },
-            last_shoot_time: LastShootTime { time: 0.0, prevent_accidental_fire: true },
+            last_shoot_time: LastShootTime {
+                time: 0.0,
+                prevent_accidental_fire: true,
+            },
         }
     }
 }
@@ -138,27 +140,29 @@ pub fn player_shoot(
             &Transform,
             &Weapon,
             &mut LastShootTime,
-            &mut ShootingAnimationState,
+            &mut PlayerState,
             &mut WeaponMagazine,
         ),
         With<Player>,
     >,
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
-    // TODO handle input
-	let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) =
-		query_player.single_mut();
-    if keys.pressed(MouseButton::Left) {
+    let (e, player_transform, weapon, mut last_shoot, mut player_state, mut mag) =
+        query_player.single_mut();
 
-		// Don't shoot if the player most likely didn't intend to shoot.
-		if last_shoot.prevent_accidental_fire {
-			return;
-		}
+    if keys.pressed(MouseButton::Left) {
+        // Don't shoot if the player most likely didn't intend to shoot.
+        if last_shoot.prevent_accidental_fire {
+            return;
+        }
 
         // return if out of ammo or reloading
         if mag.current < 1 || mag.current_reload > 0.0 {
             return;
         }
+
+        // animation
+        player_state.new = PlayerStateEnum::Shooting;
 
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
@@ -177,8 +181,6 @@ pub fn player_shoot(
                 entity: e,
                 ammo_type: weapon.ammo_type,
             });
-            // animation
-            *animation_state = ShootingAnimationState::Shooting;
 
             // firing
             // if only one bullet we don't care about spread
@@ -289,10 +291,11 @@ pub fn player_shoot(
                 }
             }
         }
-	}
-	// If the button is no longer pressed, then any clicks after are most likely intended for
-	// shooting
-	last_shoot.prevent_accidental_fire = false;
+    } else {
+        // If the button is no longer pressed, then any clicks after are most likely intended for
+        // shooting
+        last_shoot.prevent_accidental_fire = false;
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -354,12 +357,15 @@ pub fn armaments_despawn(
 pub fn gun_reload(
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut q: Query<(&mut WeaponMagazine, &mut SpareAmmo), With<Player>>,
+    mut q: Query<(&mut WeaponMagazine, &mut SpareAmmo, &mut PlayerState), With<Player>>,
 ) {
-    let (mut mag, mut spare_ammo) = q.single_mut();
+    let (mut mag, mut spare_ammo, mut player_state) = q.single_mut();
 
     // If a reload is in progress, try to complete it.
     if mag.current_reload > 0.0 {
+        // animation
+        player_state.new = PlayerStateEnum::Reloading;
+
         mag.current_reload += time.delta_seconds();
         if mag.current_reload > mag.reload_time {
             mag.current_reload = 0.0;

@@ -80,17 +80,17 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(crosshair_position_update_system)
                 .with_system(recalculate_camera_desination_system)
                 .with_system(refresh_camera_position_system)
-                .with_system(transfer_input_to_player_system)
+                .with_system(transfer_input_to_player_system.label("player_movement"))
                 .with_system(print_player_position)
                 // enemies
                 .with_system(enemy_controller.label("enemy_controller"))
                 .with_system(enemy_spawn)
                 .with_system(enemy_despawn)
                 // shooting
-                .with_system(player_shoot.label("player_shoot"))
+                .with_system(player_shoot.label("player_shoot").after("player_movement"))
                 .with_system(projectiles_controller.label("projectiles"))
                 .with_system(armaments_despawn)
-                .with_system(gun_reload)
+                .with_system(gun_reload.label("gun_reload").after("player_shoot"))
                 .with_system(handle_shot_audio.after("player_shoot"))
                 .with_system(handle_impact_audio)
                 // damage
@@ -104,7 +104,12 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 )
                 // animation
                 .with_system(animations_removal)
-                .with_system(animation_player_shooting)
+                .with_system(
+                    animation_player
+                        .after("player_movement")
+                        .after("player_shoot")
+                        .after("gun_reload"),
+                )
                 .with_system(animation_player_impact.after("projectiles"))
                 .with_system(animation_explosive_objects)
                 // interaction processing
@@ -143,8 +148,14 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
 pub struct GameAssets {
     #[asset(key = "player.idle")]
     pub player_idle: Handle<Image>,
-    #[asset(key = "player.shooting")]
-    pub player_shooting: Handle<Image>,
+    #[asset(key = "player.legs")]
+    pub player_legs: Handle<Image>,
+    #[asset(key = "player.move")]
+    pub player_move: Handle<Image>,
+    #[asset(key = "player.reload")]
+    pub player_reload: Handle<Image>,
+    #[asset(key = "player.shoot")]
+    pub player_shoot: Handle<Image>,
     #[asset(key = "item.medkit")]
     pub medkit: Handle<Image>,
     #[asset(key = "animation.explosion")]

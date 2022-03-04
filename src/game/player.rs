@@ -1,11 +1,13 @@
+use super::animations::AnimationBundle;
 use super::shooting::WeaponryBundle;
 use super::{GameAssets, SpatialAudioReceptor};
-use crate::game::animations::ShootingAnimationBundle;
+use crate::game::animations::{BulletsImpactAnimations, PlayerAnimations};
 use crate::game::damage::Health;
 use crate::game::enemies::EnemyWave;
 use crate::game::phys_layers::PhysLayer;
 use crate::util::WorldCursor;
 use crate::AppState;
+use benimator::SpriteSheetAnimation;
 use bevy::prelude::*;
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use heron::{CollisionLayers, CollisionShape, RigidBody};
@@ -18,12 +20,33 @@ pub struct PlayerMovementSpeed {
     pub value: f32,
 }
 
+#[derive(Component, Debug, Clone, Copy, PartialEq)]
+pub enum PlayerStateEnum {
+    Idle,
+    Running,
+    Reloading,
+    Shooting,
+}
+
+#[derive(Component, Debug)]
+pub struct PlayerState {
+    pub current: PlayerStateEnum,
+    pub new: PlayerStateEnum,
+}
+
+impl PlayerState {
+    pub fn changed(&self) -> bool {
+        self.current != self.new
+    }
+}
+
 #[derive(Bundle)]
 pub struct PlayerBundle {
     pub player: Player,
     pub movement_speed: PlayerMovementSpeed,
     pub health: Health,
     // cleanup marker
+    pub state: PlayerState,
     pub cleanup: super::GameCleanup,
 }
 
@@ -36,28 +59,39 @@ impl Default for PlayerBundle {
                 current: 200.,
                 max: 200.,
             },
+            state: PlayerState {
+                current: PlayerStateEnum::Idle,
+                new: PlayerStateEnum::Idle,
+            },
             cleanup: super::GameCleanup,
         }
     }
 }
 
-pub fn init_player(mut commands: Commands, assets: Option<Res<GameAssets>>) {
+pub fn init_player(
+    mut commands: Commands,
+    assets: Option<Res<GameAssets>>,
+    mut textures: ResMut<Assets<TextureAtlas>>,
+    mut animations: ResMut<Assets<SpriteSheetAnimation>>,
+) {
     if let Some(assets) = assets {
         let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 0.0));
+        let player_animations =
+            PlayerAnimations::from_game_assets(&assets, &mut textures, &mut animations);
         let _x = commands
-            .spawn_bundle(SpriteBundle {
-                sprite: Sprite {
-                    custom_size: Some(Vec2::new(64.0, 64.0)),
-                    ..Default::default()
-                },
-
-                texture: assets.player_idle.clone(),
-                transform: player_transform,
-                ..Default::default()
-            })
+            .spawn_bundle(AnimationBundle::from_animation_transform_size(
+                &player_animations.idle,
+                player_transform,
+                Some(Vec2::new(64.0, 64.0)),
+            ))
             .insert_bundle(PlayerBundle::default())
             .insert_bundle(WeaponryBundle::default())
-            .insert_bundle(ShootingAnimationBundle::default())
+            .insert(BulletsImpactAnimations::from_game_assets(
+                &assets,
+                &mut textures,
+                &mut animations,
+            ))
+            .insert(player_animations)
             .insert(EnemyWave {
                 timer: Timer::from_seconds(5.0, true),
                 number: 10,
@@ -84,7 +118,12 @@ pub fn print_player_position(q: Query<&Transform, With<Player>>, keys: Res<Input
 
 pub fn transfer_input_to_player_system(
     mut player_tform_q: Query<
-        (&mut Transform, &CollisionShape, &PlayerMovementSpeed),
+        (
+            &CollisionShape,
+            &PlayerMovementSpeed,
+            &mut Transform,
+            &mut PlayerState,
+        ),
         With<Player>,
     >,
     keys: Res<Input<KeyCode>>,
@@ -92,7 +131,7 @@ pub fn transfer_input_to_player_system(
     crs: Res<WorldCursor>,
     physics_world: PhysicsWorld,
 ) {
-    let (mut player_tform, player_col, speed) = player_tform_q.single_mut();
+    let (player_col, speed, mut player_tform, mut state) = player_tform_q.single_mut();
     let mouse_pos_level = crs.0.extend(0.0);
 
     let direction = mouse_pos_level - player_tform.translation;
@@ -114,6 +153,13 @@ pub fn transfer_input_to_player_system(
 
     if keys.pressed(KeyCode::D) {
         kb_inupt_vector += Vec3::X;
+    }
+
+    // animations
+    if kb_inupt_vector == Vec3::ZERO {
+        state.new = PlayerStateEnum::Idle;
+    } else {
+        state.new = PlayerStateEnum::Running;
     }
 
     let mut final_movement_vector = kb_inupt_vector * speed.value * time.delta_seconds();
