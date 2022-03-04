@@ -62,7 +62,7 @@ pub struct Weapon {
     // bullets will be spread equally over `spread`
     pub projectiles_per_shot: u32,
     // how far projectiles should spawn from player
-    pub projectile_spawn_offset: f32,
+    pub projectile_spawn_offset: Vec3,
     // for now used to define radius for Throwable and Static
     // does nothing for Projectile
     pub radius_of_effect: f32,
@@ -111,7 +111,7 @@ impl Default for WeaponryBundle {
                 projectile_life_time: 1.0,
                 spread: 90.0,
                 projectiles_per_shot: 1,
-                projectile_spawn_offset: 50.0,
+                projectile_spawn_offset: Vec3::new(33.0, -15.0, 0.0),
                 radius_of_effect: 100.0,
             },
             spare_ammo: SpareAmmo { current: 40 },
@@ -166,9 +166,12 @@ pub fn player_shoot(
 
         let cross_transform = query_cross.single_mut();
         let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
+        let shoot_offset = player_transform
+            .rotation
+            .mul_vec3(weapon.projectile_spawn_offset);
         let spawn_transform = {
             let mut pt = *player_transform;
-            pt.translation += shoot_dir * weapon.projectile_spawn_offset;
+            pt.translation += shoot_offset;
             pt
         };
 
