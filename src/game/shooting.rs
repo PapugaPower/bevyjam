@@ -33,6 +33,9 @@ pub enum ImpactSurface {
 #[derive(Component)]
 pub struct LastShootTime {
     pub time: f32,
+	/// Set to true at the start of the game so that no bullets are fired when the player is still
+	/// clicking (just after pressing the "start scenario" button).
+	prevent_accidental_fire: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -119,7 +122,7 @@ impl Default for WeaponryBundle {
                 reload_time: 2.0,
                 current_reload: 0.0,
             },
-            last_shoot_time: LastShootTime { time: 0.0 },
+            last_shoot_time: LastShootTime { time: 0.0, prevent_accidental_fire: true },
         }
     }
 }
@@ -143,9 +146,14 @@ pub fn player_shoot(
     mut query_cross: Query<&Transform, With<Crosshair>>,
 ) {
     // TODO handle input
+	let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) =
+		query_player.single_mut();
     if keys.pressed(MouseButton::Left) {
-        let (e, player_transform, weapon, mut last_shoot, mut animation_state, mut mag) =
-            query_player.single_mut();
+
+		// Don't shoot if the player most likely didn't intend to shoot.
+		if last_shoot.prevent_accidental_fire {
+			return;
+		}
 
         // return if out of ammo or reloading
         if mag.current < 1 || mag.current_reload > 0.0 {
@@ -281,7 +289,10 @@ pub fn player_shoot(
                 }
             }
         }
-    }
+	}
+	// If the button is no longer pressed, then any clicks after are most likely intended for
+	// shooting
+	last_shoot.prevent_accidental_fire = false;
 }
 
 #[allow(clippy::too_many_arguments)]
