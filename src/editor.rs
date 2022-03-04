@@ -49,7 +49,6 @@ impl Plugin for DevEditorPlugin {
                 .with_system(collider::draghandles_track_collider
                     .before(bevy::transform::TransformSystem::TransformPropagate))
         );
-        app.add_system_to_stage(FuckStages::Pre, collider::collider_apply_sync);
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor)
                 .with_system(ui::spawn_ui.label("editorui"))
@@ -114,12 +113,14 @@ impl Plugin for DevEditorPlugin {
                 .with_system(button_connector::<ui::ToolBtn>.chain(ui::tool_btn_handler))
                 // handle spawn buttons for blueprints:
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::Wall>))
+                .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::HurtZone>))
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
         );
         app.add_system_set(
             SystemSet::on_enter(AppState::DevEditor).after("editorui")
                 // add spawn buttons for blueprints:
                 .with_system(ui::add_spawn_button::<gamecollider::Wall>)
+                .with_system(ui::add_spawn_button::<gamecollider::HurtZone>)
                 .with_system(ui::add_spawn_button::<Medkit>)
         );
     }

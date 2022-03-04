@@ -73,29 +73,6 @@ pub fn cleanup_collider_visualizations(
     }
 }
 
-pub fn collider_apply_sync(
-    mut q: Query<(Entity, &EditableCollider, Option<&mut CollisionShape>)>,
-    mut cmd: Commands,
-) {
-    for (e, edit, shape) in q.iter_mut() {
-        if let Some(mut shape) = shape {
-            match &mut *shape {
-                CollisionShape::Cuboid { half_extends, border_radius: _ } => {
-                    *half_extends = edit.half_extends.extend(half_extends.z);
-                }
-                _ => {
-                    cmd.entity(e).remove::<EditableCollider>();
-                }
-            }
-        } else {
-            cmd.entity(e).insert(CollisionShape::Cuboid {
-                half_extends: edit.half_extends.extend(100.0),
-                border_radius: None,
-            });
-        }
-    }
-}
-
 const DRAGHANDLE_RADIUS: f32 = 8.0;
 
 #[derive(Debug, Component, Clone, Copy)]

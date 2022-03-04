@@ -61,6 +61,7 @@ impl Plugin for BlueprintsPlugin {
             SystemSet::new()
                 .with_system(init_bp_medkit)
                 .with_system(init_bp_collider::<collider::Wall>)
+                .with_system(init_bp_collider::<collider::HurtZone>)
         );
     }
 }
@@ -106,7 +107,7 @@ pub struct BasicBlueprintBundle<T: Blueprint> {
 
 #[derive(SystemParam)]
 struct BlueprintQuery<'w, 's, T: Blueprint> {
-    query: Query<'w, 's, (Entity, &'static Transform), Added<T>>,
+    query: Query<'w, 's, (Entity, &'static T, &'static Transform), Added<T>>,
 }
 
 // MEDKITS
@@ -136,7 +137,7 @@ fn init_bp_medkit(
     assets: Option<Res<GameAssets>>,
 ) {
     if let Some(assets) = assets {
-        for (e, xf) in q_bp.query.iter() {
+        for (e, _medkit, xf) in q_bp.query.iter() {
             // The editor spawns the entity with a `NewlySpawned` component.
             // This is used to enable positioning it in the scene with the mouse.
             // Since we are reparenting the medkit under the trigger,
@@ -202,7 +203,7 @@ pub trait ColliderBehavior: Blueprint {
     const EDITOR_COLOR: Color;
     const KINDENUM: ColliderKind;
 
-    fn fill_blueprint(cmd: &mut EntityCommands);
+    fn fill_blueprint(&self, cmd: &mut EntityCommands);
 }
 
 impl Blueprint for collider::Wall {
@@ -214,7 +215,7 @@ impl Blueprint for collider::Wall {
 impl ColliderBehavior for collider::Wall {
     const KINDENUM: ColliderKind = ColliderKind::Wall;
     const EDITOR_COLOR: Color = Color::rgba(1.0, 0.75, 0.5, 0.25);
-    fn fill_blueprint(cmd: &mut EntityCommands) {
+    fn fill_blueprint(&self, cmd: &mut EntityCommands) {
         cmd
             .insert(GlobalTransform::default())
             .insert(RigidBody::Static)
@@ -224,11 +225,27 @@ impl ColliderBehavior for collider::Wall {
     }
 }
 
+impl Blueprint for collider::HurtZone {
+    const EDITOR_ID: &'static str = "HurtZone";
+    const DEFAULT_Z: f32 = 0.0;
+    type BlueprintBundle = ColliderBlueprintBundle<Self>;
+}
+
+impl ColliderBehavior for collider::HurtZone {
+    const KINDENUM: ColliderKind = ColliderKind::HurtZone;
+    const EDITOR_COLOR: Color = Color::rgba(1.0, 0.5, 0.25, 0.25);
+    fn fill_blueprint(&self, cmd: &mut EntityCommands) {
+        cmd
+            .insert(GlobalTransform::default())
+            .insert(Pulsing::from(self));
+    }
+}
+
 fn init_bp_collider<T: ColliderBehavior>(
     mut commands: Commands,
     q_bp: BlueprintQuery<T>,
 ) {
-    for (e, _) in q_bp.query.iter() {
+    for (e, coll, _) in q_bp.query.iter() {
         commands.entity(e)
             .insert(GameCleanup)
             // editor integration
@@ -236,6 +253,6 @@ fn init_bp_collider<T: ColliderBehavior>(
             .insert(crate::scene_exporter::SaveSceneMarker)
             .insert(T::KINDENUM)
             .insert(ColliderEditorVisColor(T::EDITOR_COLOR));
-        T::fill_blueprint(&mut commands.entity(e));
+        coll.fill_blueprint(&mut commands.entity(e));
     }
 }

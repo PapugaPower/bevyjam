@@ -32,8 +32,8 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
                 .with_system(spawn_dynamic_scene)
                 .with_system(init_game_timer)
                 .with_system(setup_scene)
-                .with_system(debug_spawn_door)
-                .with_system(debug_environment_damage_zones)
+                //.with_system(debug_spawn_door)
+                //.with_system(debug_environment_damage_zones)
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
@@ -95,7 +95,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             custom_size: Some(Vec2::new(1920.0, 1080.0)),
             ..Default::default()
         },
-        transform: Transform::from_xyz(0.0, 0.0, -1.0),
+        transform: Transform::from_xyz(-2500.0, 800.0, -1.0),
         global_transform: Default::default(),
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),
