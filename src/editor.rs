@@ -114,6 +114,8 @@ impl Plugin for DevEditorPlugin {
                 // handle spawn buttons for blueprints:
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::Wall>))
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::HurtZone>))
+                .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::SpawnZone>))
+                .with_system(button_connector.chain(ui::spawn_btn_handler::<gamecollider::WinZone>))
                 .with_system(button_connector.chain(ui::spawn_btn_handler::<Medkit>))
         );
         app.add_system_set(
@@ -121,6 +123,8 @@ impl Plugin for DevEditorPlugin {
                 // add spawn buttons for blueprints:
                 .with_system(ui::add_spawn_button::<gamecollider::Wall>)
                 .with_system(ui::add_spawn_button::<gamecollider::HurtZone>)
+                .with_system(ui::add_spawn_button::<gamecollider::SpawnZone>)
+                .with_system(ui::add_spawn_button::<gamecollider::WinZone>)
                 .with_system(ui::add_spawn_button::<Medkit>)
         );
     }

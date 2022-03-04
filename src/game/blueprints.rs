@@ -62,6 +62,8 @@ impl Plugin for BlueprintsPlugin {
                 .with_system(init_bp_medkit)
                 .with_system(init_bp_collider::<collider::Wall>)
                 .with_system(init_bp_collider::<collider::HurtZone>)
+                .with_system(init_bp_collider::<collider::WinZone>)
+                .with_system(init_bp_collider::<collider::SpawnZone>)
         );
     }
 }
@@ -233,11 +235,45 @@ impl Blueprint for collider::HurtZone {
 
 impl ColliderBehavior for collider::HurtZone {
     const KINDENUM: ColliderKind = ColliderKind::HurtZone;
-    const EDITOR_COLOR: Color = Color::rgba(1.0, 0.5, 0.25, 0.25);
+    const EDITOR_COLOR: Color = Color::rgba(1.0, 0.25, 0.0, 0.25);
     fn fill_blueprint(&self, cmd: &mut EntityCommands) {
         cmd
             .insert(GlobalTransform::default())
             .insert(Pulsing::from(self));
+    }
+}
+
+impl Blueprint for collider::WinZone {
+    const EDITOR_ID: &'static str = "WinZone";
+    const DEFAULT_Z: f32 = 0.0;
+    type BlueprintBundle = ColliderBlueprintBundle<Self>;
+}
+
+impl ColliderBehavior for collider::WinZone {
+    const KINDENUM: ColliderKind = ColliderKind::WinZone;
+    const EDITOR_COLOR: Color = Color::rgba(0.25, 1.0, 0.5, 0.25);
+    fn fill_blueprint(&self, cmd: &mut EntityCommands) {
+        cmd
+            // the CollisionShape will be automatically inserted by `game::collider::collider_apply_sync`
+            // TODO: add any other stuff needed
+            .insert(GlobalTransform::default());
+    }
+}
+
+impl Blueprint for collider::SpawnZone {
+    const EDITOR_ID: &'static str = "SpawnZone";
+    const DEFAULT_Z: f32 = 0.0;
+    type BlueprintBundle = ColliderBlueprintBundle<Self>;
+}
+
+impl ColliderBehavior for collider::SpawnZone {
+    const KINDENUM: ColliderKind = ColliderKind::SpawnZone;
+    const EDITOR_COLOR: Color = Color::rgba(0.25, 0.5, 1.0, 0.25);
+    fn fill_blueprint(&self, cmd: &mut EntityCommands) {
+        cmd
+            // the CollisionShape will be automatically inserted by `game::collider::collider_apply_sync`
+            // TODO: add any other stuff needed
+            .insert(GlobalTransform::default());
     }
 }
 
