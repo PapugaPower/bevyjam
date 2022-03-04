@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::editor::collider::EditableCollider;
 use crate::game::animations::{Animation, AnimationBundle, EnemyAnimations};
-use crate::game::damage::Health;
+use crate::game::damage::{DamageEvent, DamageSource, Health};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use crate::util::WorldCursor;
@@ -232,6 +232,32 @@ pub fn enemy_despawn(
 }
 */
 
+pub fn enemy_damage(
+    mut damage_event: EventWriter<DamageEvent>,
+    mut query: QuerySet<(
+        QueryState<(Entity, &Transform), With<Player>>,
+        QueryState<(&EnemyAttack, &Transform), With<Enemy>>,
+    )>,
+) {
+    let (player, player_position) = {
+        let (p, t) = query.q0().single();
+        (p, t.translation)
+    };
+
+    for (attack, transform) in query.q1().iter() {
+        // damage check
+        let direction = player_position - transform.translation;
+        let distance = direction.length();
+        if distance <= attack.range {
+            damage_event.send(DamageEvent {
+                entity: player,
+                source: DamageSource::Enemy,
+                damage: attack.damage,
+            });
+        }
+    }
+}
+
 pub fn enemy_debug_lines(
     mut lines: ResMut<DebugLines>,
     q: Query<(&Transform, &EnemyTargetPos), With<Enemy>>,
@@ -415,8 +441,8 @@ pub fn enemy_walk(
     }
 
     for mut xf in q_set.q0().iter_mut() {
-        let to_player:Vec3 = player_pos - xf.translation;
-        if to_player.length_squared() < 45.0*45.0 {
+        let to_player: Vec3 = player_pos - xf.translation;
+        if to_player.length_squared() < 45.0 * 45.0 {
             let direction = player_pos - xf.translation;
             let angle = direction.y.atan2(direction.x);
             xf.rotation = Quat::from_axis_angle(Vec3::Z, angle);
@@ -503,7 +529,7 @@ pub fn spawn_zones(
     mut cfg: ResMut<EnemyConfig>,
     t: Res<Time>,
     animations: Res<EnemyAnimations>,
-    physics_world: PhysicsWorld
+    physics_world: PhysicsWorld,
 ) {
     use bevy::core::FloatOrd;
 
@@ -547,12 +573,12 @@ pub fn spawn_zones(
     for (e, pos) in zones {
         let pos = pos.extend(0.);
 
-        let shape = &CollisionShape::Sphere {radius: 100.0};
+        let shape = &CollisionShape::Sphere { radius: 100.0 };
         let hit = physics_world.shape_cast_with_filter(
             shape,
             pos,
             Quat::IDENTITY,
-            Vec3::new(playerpos.x, playerpos.y, 0.0 ) - pos,
+            Vec3::new(playerpos.x, playerpos.y, 0.0) - pos,
             CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
                 .with_mask(PhysLayer::World),
@@ -563,7 +589,7 @@ pub fn spawn_zones(
             // try next zone
             continue;
         }
-        
+
         debug!("picked zone at {:?}", pos);
         let (area, _zone) = q_zone.get(e).unwrap();
         let x = rng.gen_range(-area.half_extends.x..area.half_extends.x);

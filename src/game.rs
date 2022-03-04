@@ -99,6 +99,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 //.with_system(enemy_player_search.before("damage"))
                 //.with_system(enemy_target_scan.before("damage"))
                 .with_system(enemy_walk)
+                .with_system(enemy_damage)
                 // .with_system(enemy_flock)
                 // .with_system(enemy_spawn)
                 // .with_system(enemy_despawn)
