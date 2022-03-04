@@ -104,13 +104,13 @@ fn init_mainmenu(
         menu, btn::EnterGame(GameMode::Scenario1)
     );
 
-    spawn_button(
-        &mut cmd,
-        uicfg.btn_style.clone(),
-        assets.npimg_button.clone(),
-        nps.npmeta_button.clone(),
-        menu, btn::EnterGame(GameMode::DevPlayground)
-    );
+    // spawn_button(
+    //     &mut cmd,
+    //     uicfg.btn_style.clone(),
+    //     assets.npimg_button.clone(),
+    //     nps.npmeta_button.clone(),
+    //     menu, btn::EnterGame(GameMode::DevPlayground)
+    // );
 
     spawn_button(
         &mut cmd,
@@ -124,7 +124,7 @@ fn init_mainmenu(
 impl Btn for btn::EnterGame {
     fn fill_content(&self) -> String {
         match self.0 {
-            GameMode::DevPlayground => "Dev Playground",
+            // GameMode::DevPlayground => "Dev Playground",
             GameMode::Scenario1 => "Main Scenario",
         }.into()
     }
