@@ -52,7 +52,13 @@ fn init_ui(
         color: UiColor(Color::rgb(0.5, 0.5, 0.5)),
         style: Style {
             size: Size::new(Val::Auto, Val::Auto),
-            margin: Rect::all(Val::Auto),
+            position_type: PositionType::Absolute,
+            position: Rect {
+                bottom: Val::Px(300.0),
+                top: Val::Px(300.0),
+                left: Val::Px(200.0),
+                right: Val::Px(200.0),
+            },
             align_self: AlignSelf::Center,
             flex_direction: FlexDirection::ColumnReverse,
             //align_items: AlignItems::Stretch,
