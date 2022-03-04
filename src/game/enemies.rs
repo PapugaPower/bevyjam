@@ -532,31 +532,36 @@ pub fn spawn_zones(
     let playerpos = q_player.single().translation.truncate();
 
     // let mut zones: Vec<_> = q_zone2.iter().map(|(e, xf)| (e, xf.translation.truncate())).collect();
-    // sort zones by distance to the player
     // zones.sort_unstable_by_key(|(e, pos)| FloatOrd(pos.distance_squared(playerpos)));
 
-    // find the closest zone to the player, above the min spawn distance
-    if let Some((e, pos)) = q_zone2
+    // get (Entity, Vec2) (position) of each zone above the min distance
+    let mut zones: Vec<_> = q_zone2
         .iter()
         .map(|(e, xf)| (e, xf.translation.truncate()))
         .filter(|(_e, pos)| pos.distance_squared(playerpos) > mindist2)
-        .min_by_key(|(_e, pos)| FloatOrd(pos.distance_squared(playerpos)))
-    {
-        let (_entity, zone_xf) = q_zone2.get(e).unwrap();
+        .collect();
+
+    // sort zones by distance to the player
+    zones.sort_unstable_by_key(|(e, pos)| FloatOrd(pos.distance_squared(playerpos)));
+
+    for (e, pos) in zones {
+        let pos = pos.extend(0.);
+
         let shape = &CollisionShape::Sphere {radius: 100.0};
         let hit = physics_world.shape_cast_with_filter(
             shape,
-            zone_xf.translation,
+            pos,
             Quat::IDENTITY,
-            Vec3::new(playerpos.x, playerpos.y, 0.0 ) - zone_xf.translation,
+            Vec3::new(playerpos.x, playerpos.y, 0.0 ) - pos,
             CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
                 .with_mask(PhysLayer::World),
             |_entitity| true,
         );
 
-        if let Some(collision) = hit {
-            return;
+        if hit.is_some() {
+            // try next zone
+            continue;
         }
         
         debug!("picked zone at {:?}", pos);
