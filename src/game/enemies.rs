@@ -400,11 +400,11 @@ pub fn enemy_walk(
     
     for mut xf in q_set.q0().iter_mut() {
         let to_player:Vec3 = player_pos - xf.translation;
-        if to_player.length_squared() < 50.0*50.0 {
+        if to_player.length_squared() < 45.0*45.0 {
             let direction = player_pos - xf.translation;
             let angle = direction.y.atan2(direction.x);
             xf.rotation = Quat::from_axis_angle(Vec3::Z, angle);
-            return;
+            continue;
         }
         let mut final_movement_vector = to_player.normalize() * 469.69 * t.delta_seconds();
         for iter in 0..4 {
