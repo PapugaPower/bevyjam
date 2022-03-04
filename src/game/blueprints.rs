@@ -157,12 +157,11 @@ fn init_bp_medkit(
 ) {
     if let Some(assets) = assets {
         for (e, _medkit, xf) in q_bp.query.iter() {
-            // The editor spawns the entity with a `NewlySpawned` component.
-            // This is used to enable positioning it in the scene with the mouse.
-            // Since we are reparenting the medkit under the trigger,
-            // we have to remove NewlySpawned from the medkit entity
-            // and add it to the toplevel trigger entity.
-
+            if xf.translation == Vec3::ZERO {
+                commands.entity(e)
+                    .despawn();
+                continue;
+            }
             // trigger for medkit
             commands
                 .entity(e)
@@ -236,6 +235,11 @@ fn init_bp_ammo_box(
 ) {
     if let Some(assets) = assets {
         for (e, _ammo_box, xf) in q_bp.query.iter() {
+            if xf.translation == Vec3::ZERO {
+                commands.entity(e)
+                    .despawn();
+                continue;
+            }
             // trigger for ammo box
             commands
                 .entity(e)
