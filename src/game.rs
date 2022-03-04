@@ -63,8 +63,6 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
         app.add_event::<PlayerFiredEvent>();
         app.add_event::<BulletImpactEvent>();
         app.add_system_to_stage(CoreStage::PostUpdate, add_missing_cleanup);
-        app.add_system_to_stage(FuckStages::Post, collider::collider_apply_sync);
-        app.add_system_to_stage(FuckStages::Post, collider::collider_apply_sync_hurtzone);
         // add systems to `self.state`
         app.add_system_set(
             SystemSet::on_enter(self.state.clone())

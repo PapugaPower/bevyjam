@@ -64,6 +64,10 @@ impl Plugin for BlueprintsPlugin {
                 .with_system(init_bp_collider::<collider::HurtZone>)
                 .with_system(init_bp_collider::<collider::WinZone>)
                 .with_system(init_bp_collider::<collider::SpawnZone>)
+                .with_system(collider_apply_sync::<collider::Wall>)
+                .with_system(collider_apply_sync::<collider::HurtZone>)
+                .with_system(collider_apply_sync::<collider::WinZone>)
+                .with_system(collider_apply_sync::<collider::SpawnZone>)
         );
     }
 }
@@ -205,7 +209,15 @@ pub trait ColliderBehavior: Blueprint {
     const EDITOR_COLOR: Color;
     const KINDENUM: ColliderKind;
 
+    /// Called when a new blueprint is spawned, to fill out the entity with components
     fn fill_blueprint(&self, cmd: &mut EntityCommands);
+    /// Called when the bounds need to be updated (like resizing from the editor)
+    fn sync_dimensions(&self, edit: &EditableCollider, cmd: &mut EntityCommands) {
+        cmd.insert(CollisionShape::Cuboid {
+            half_extends: edit.half_extends.extend(100.0),
+            border_radius: None,
+        });
+    }
 }
 
 impl Blueprint for collider::Wall {
@@ -240,6 +252,12 @@ impl ColliderBehavior for collider::HurtZone {
         cmd
             .insert(GlobalTransform::default())
             .insert(Pulsing::from(self));
+    }
+    /// HurtZones need a DamageAreaShape instead of CollisionShape
+    fn sync_dimensions(&self, edit: &EditableCollider, cmd: &mut EntityCommands) {
+        cmd.insert(DamageAreaShape::Cuboid {
+            half_extends: edit.half_extends.extend(100.0),
+        });
     }
 }
 
@@ -290,5 +308,20 @@ fn init_bp_collider<T: ColliderBehavior>(
             .insert(T::KINDENUM)
             .insert(ColliderEditorVisColor(T::EDITOR_COLOR));
         coll.fill_blueprint(&mut commands.entity(e));
+    }
+}
+
+pub fn collider_apply_sync<T: ColliderBehavior>(
+    q: Query<(
+        Entity,
+        &T,
+        &EditableCollider,
+    ), (
+        Changed<EditableCollider>,
+    )>,
+    mut cmd: Commands,
+) {
+    for (e, coll, edit) in q.iter() {
+        coll.sync_dimensions(edit, &mut cmd.entity(e));
     }
 }

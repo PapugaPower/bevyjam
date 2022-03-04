@@ -5,7 +5,7 @@ use heron::CollisionShape;
 
 use crate::editor::collider::EditableCollider;
 
-use super::damage::{Pulsing, DamageAreaShape};
+use super::{damage::{Pulsing, DamageAreaShape}, blueprints::ColliderBehavior};
 
 #[derive(Component, Default, Clone, Copy, Reflect)]
 #[reflect(Component)]
@@ -60,61 +60,3 @@ impl Default for HurtZone {
     }
 }
 
-pub fn collider_apply_sync(
-    mut q: Query<(
-        Entity,
-        &EditableCollider,
-        Option<&mut CollisionShape>
-    ), (
-        Changed<EditableCollider>,
-        Without<HurtZone>,
-    )>,
-    mut cmd: Commands,
-) {
-    for (e, edit, shape) in q.iter_mut() {
-        if let Some(mut shape) = shape {
-            match &mut *shape {
-                CollisionShape::Cuboid { half_extends, border_radius: _ } => {
-                    *half_extends = edit.half_extends.extend(half_extends.z);
-                }
-                _ => {
-                    cmd.entity(e).remove::<EditableCollider>();
-                }
-            }
-        } else {
-            cmd.entity(e).insert(CollisionShape::Cuboid {
-                half_extends: edit.half_extends.extend(100.0),
-                border_radius: None,
-            });
-        }
-    }
-}
-
-pub fn collider_apply_sync_hurtzone(
-    mut q: Query<(
-        Entity,
-        &EditableCollider,
-        Option<&mut DamageAreaShape>
-    ), (
-        Changed<EditableCollider>,
-        With<HurtZone>,
-    )>,
-    mut cmd: Commands,
-) {
-    for (e, edit, shape) in q.iter_mut() {
-        if let Some(mut shape) = shape {
-            match &mut *shape {
-                DamageAreaShape::Cuboid { half_extends } => {
-                    *half_extends = edit.half_extends.extend(half_extends.z);
-                }
-                _ => {
-                    cmd.entity(e).remove::<EditableCollider>();
-                }
-            }
-        } else {
-            cmd.entity(e).insert(DamageAreaShape::Cuboid {
-                half_extends: edit.half_extends.extend(100.0),
-            });
-        }
-    }
-}
