@@ -4,7 +4,7 @@ use crate::game::damage::{DamageEvent, DamageSource, Health};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::player::Player;
 use crate::util::WorldCursor;
-use bevy::prelude::*;
+use bevy::{prelude::*, transform};
 use heron::rapier_plugin::{PhysicsWorld, ShapeCastCollisionType};
 use heron::{CollisionLayers, CollisionShape, RigidBody};
 use bevy_prototype_debug_lines::*;
@@ -32,6 +32,9 @@ pub struct EnemyTargetLastSeen(Timer);
 
 #[derive(Component)]
 pub struct EnemyTargetScanning(f64, bool, bool);
+
+#[derive(Component)]
+pub struct EnemyWallAvoidance(f32);
 
 impl EnemyTargetScanning {
     fn new(secs_since_startup: f64) -> EnemyTargetScanning {
@@ -257,29 +260,34 @@ pub fn enemy_die(
 }
 
 pub fn enemy_rotation(
-    mut q: Query<(&mut Transform, &EnemyTargetPos)>,
+    mut q: Query<(&mut Transform, &EnemyTargetPos, Option<&EnemyWallAvoidance>)>,
     t: Res<Time>,
 ) {
     const P: f32 = 2.0;
 
-    for (mut xf, target) in q.iter_mut() {
+    for (mut xf, target, avoid) in q.iter_mut() {
+        let mut avoid = avoid.map(|x| x.0).unwrap_or(0.0);
+        if avoid.is_nan() {
+            avoid = 0.0;
+        }
         let dir_fwd = xf.local_x().truncate();
-        let dir_tgt = dbg!(target.0) - xf.translation.truncate();
+        let dir_tgt = target.0 - xf.translation.truncate();
         let angle = dir_fwd.angle_between(dir_tgt);
-        let rotation = Quat::from_rotation_z(angle * P * t.delta_seconds());
+        let rotation = Quat::from_rotation_z((dbg!(avoid) + angle * P) * t.delta_seconds());
         xf.rotate(rotation);
     }
 }
 
 pub fn enemy_line_of_sight(
     mut commands: Commands,
-    mut q_enemy: Query<(Entity, &Transform, &mut EnemyTargetLastSeen, Option<&EnemyTargetScanning>)>,
+    mut q_enemy: Query<(Entity, &Transform, &mut EnemyTargetLastSeen, &mut EnemyTargetPos, Option<&EnemyTargetScanning>)>,
     q_player: Query<Entity, With<Player>>,
     q_wall: Query<Entity, With<Wall>>,
     physics_world: PhysicsWorld,
     t: Res<Time>,
+    mut lines: ResMut<DebugLines>,
 ) {
-    for (enemy, enemy_xf, mut lastseen, scanning) in q_enemy.iter_mut() {
+    for (enemy, enemy_xf, mut lastseen, mut pos, scanning) in q_enemy.iter_mut() {
         lastseen.0.tick(t.delta());
         let raycast = physics_world.ray_cast_with_filter(
             enemy_xf.translation, enemy_xf.local_x() * 2000.0, true,
@@ -289,7 +297,25 @@ pub fn enemy_line_of_sight(
             |_entitity| true,
         );
         if let Some(coll) = raycast {
+            /*
             let distance = (coll.collision_point - enemy_xf.translation).length();
+            if q_wall.get(coll.entity).is_ok() {
+                let cross = coll.normal.cross(Vec3::Z);
+                let dir = -(cross * cross.dot(enemy_xf.local_x() + Vec2::splat(0.001).extend(0.0))).normalize();
+                let magn = coll.normal.dot(enemy_xf.local_x());
+                let dfalloff = (-distance * 0.01).exp();
+                // let dfalloff = 1.0 / (distance * 0.01).exp();
+                // dbg!(dfalloff);
+                // let angle = enemy_xf.local_x().truncate().angle_between(dir.truncate());
+                lines.line_colored(coll.collision_point, coll.collision_point + dir * magn * dfalloff * 100.0, 0.0, Color::RED);
+                // commands.entity(enemy).insert(EnemyWallAvoidance(dfalloff * magn * angle));
+                if !magn.is_nan() && !dfalloff.is_nan() {
+                    pos.0 += dir.truncate() * magn * dfalloff;
+                }
+            } else {
+                // commands.entity(enemy).remove::<EnemyWallAvoidance>();
+            }
+            */
             if q_player.get(coll.entity).is_ok() {
                 commands.entity(enemy)
                     .remove::<EnemyTargetScanning>()
@@ -310,6 +336,16 @@ pub fn enemy_line_of_sight(
             }
         }
 
+    }
+}
+
+pub fn enemy_walk(
+    mut q: Query<(&mut Transform), With<Enemy>>,
+    t: Res<Time>,
+) {
+    for mut xf in q.iter_mut() {
+        let mv = xf.local_x() * 69.69 * t.delta_seconds();
+        xf.translation += mv;
     }
 }
 

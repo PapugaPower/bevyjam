@@ -86,11 +86,12 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(print_player_position)
                 // enemies
                 //.with_system(enemy_controller.label("enemy_controller"))
-                .with_system(enemy_die)
+                .with_system(enemy_die.after("damage"))
                 .with_system(enemy_target_entity)
                 .with_system(enemy_rotation)
-                .with_system(enemy_line_of_sight)
-                .with_system(enemy_target_scan)
+                .with_system(enemy_line_of_sight.before("damage"))
+                .with_system(enemy_target_scan.before("damage"))
+                .with_system(enemy_walk)
                 // .with_system(enemy_spawn)
                 // .with_system(enemy_despawn)
                 // shooting
@@ -105,9 +106,9 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(explosive_objects_controller)
                 .with_system(
                     process_damage
+                        .label("damage")
                         .after("projectiles")
                         .after("pulses")
-                        .after("enemy_controller"),
                 )
                 // animation
                 .with_system(animations_removal)
