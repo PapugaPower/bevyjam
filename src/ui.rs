@@ -199,7 +199,7 @@ fn init_uicfg(
         hud_resource_counter_style_text: TextStyle {
             font: assets.font_menu_bold.clone(),
             font_size: 28.0,
-            color: Color::GRAY,
+            color: Color::rgba(0.7, 0.8, 0.7, 1.0),
         },
     });
 }
