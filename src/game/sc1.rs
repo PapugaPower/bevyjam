@@ -1,9 +1,14 @@
 use std::time::Duration;
+use bevy::core::FixedTimestep;
+use bevy::ecs::schedule::ShouldRun;
 
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
+use heron::CollisionShape;
 use iyes_bevy_util::BevyState;
+use crate::game::collider::ColliderKind::Wall;
 use crate::game::GameAssets;
+use crate::game::pathfinding::generate_grid;
 
 use crate::game::timer::GameTimer;
 
@@ -32,7 +37,12 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
                 .with_system(load_game_map)
         );
         app.add_system_set(
+            SystemSet::on_enter(self.state).with_run_criteria(FixedTimestep::step(10.0))
+        );
+        app.add_system_set(
             SystemSet::on_update(self.state)
+                .with_system(generate_grid)
+
         );
         app.add_system_set(
             SystemSet::on_exit(self.state)

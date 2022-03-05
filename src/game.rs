@@ -41,6 +41,7 @@ pub use dev::DevPlaygroundPlugin;
 
 pub mod blueprints;
 pub mod collider;
+mod pathfinding;
 
 /// This plugin should add all common game systems used in all levels
 pub struct GamePlugin<S: BevyState> {
