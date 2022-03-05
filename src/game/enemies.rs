@@ -23,6 +23,8 @@ pub struct EnemyConfig {
     pub min_count: u32,
     /// min distance from player
     pub min_distance: f32,
+    /// despawn above this distance
+    pub max_distance: f32,
     /// current count
     count: u32,
     pub timer_fast: Timer,
@@ -35,7 +37,8 @@ impl Default for EnemyConfig {
             max_count: 150,
             min_count: 8,
             count: 0,
-            min_distance: 700.0,
+            min_distance: 800.0,
+            max_distance: 1600.0,
             timer_fast: Timer::new(Duration::from_secs_f32(0.8), true),
             timer_slow: Timer::new(Duration::from_secs_f32(1.0), true),
         }
@@ -67,6 +70,27 @@ pub struct EnemyTargetScanning(f64, bool, bool);
 #[derive(Component)]
 pub struct EnemyWallAvoidance(Quat);
 
+#[derive(Component)]
+/// Used to detect that an enemy keeps moving, and despawn if stuck in one place
+pub struct EnemyStuckDetect {
+    /// saved position
+    pos: Vec2,
+    /// if the enemy goes more than this far away from `pos` update `pos`
+    radius: f32,
+    /// reset when `pos` gets updated; despawn if timer elapsed
+    timer: Timer,
+}
+
+impl Default for EnemyStuckDetect {
+    fn default() -> Self {
+        EnemyStuckDetect {
+            pos: Vec2::ZERO,
+            radius: 20.0,
+            timer: Timer::new(Duration::from_secs_f32(1.0), false),
+        }
+    }
+}
+
 impl EnemyTargetScanning {
     fn new(secs_since_startup: f64) -> EnemyTargetScanning {
         let mut rng = rand::thread_rng();
@@ -94,6 +118,7 @@ pub struct EnemyBundle {
     target_pos: EnemyTargetPos,
     target_last_seen: EnemyTargetLastSeen,
     scanning: EnemyTargetScanning,
+    stuck: EnemyStuckDetect,
     health: Health,
     // physics
     rigidbody: RigidBody,
@@ -122,6 +147,7 @@ impl EnemyBundle {
             target_pos: EnemyTargetPos(Vec2::new(200., 0.)),
             target_last_seen: EnemyTargetLastSeen(Timer::new(Duration::from_secs(1), false)),
             scanning: EnemyTargetScanning::new(0.0),
+            stuck: EnemyStuckDetect::default(),
             rigidbody: RigidBody::KinematicPositionBased,
             phys_layers: CollisionLayers::none()
                 .with_group(PhysLayer::Enemies)
@@ -314,11 +340,49 @@ pub fn enemy_target_scan(
 
 pub fn enemy_die(
     mut commands: Commands,
+    mut cfg: ResMut<EnemyConfig>,
     query_enemy_health: Query<(Entity, &Health), With<Enemy>>,
 ) {
     for (e, health) in query_enemy_health.iter() {
         if health.current <= 0.0 {
             commands.entity(e).despawn();
+            cfg.count -= 1;
+        }
+    }
+}
+
+pub fn enemy_despawn_far(
+    mut commands: Commands,
+    mut cfg: ResMut<EnemyConfig>,
+    q_enemy: Query<(Entity, &GlobalTransform), With<Enemy>>,
+    q_player: Query<&GlobalTransform, With<Player>>,
+) {
+    let player_pos = q_player.single().translation.truncate();
+    for (e, enemy_xf) in q_enemy.iter() {
+        let enemy_pos = enemy_xf.translation.truncate();
+        if enemy_pos.distance(player_pos) > cfg.max_distance {
+            commands.entity(e).despawn();
+            cfg.count -= 1;
+        }
+    }
+}
+
+pub fn enemy_despawn_stuck(
+    mut commands: Commands,
+    mut cfg: ResMut<EnemyConfig>,
+    mut q_enemy: Query<(Entity, &mut EnemyStuckDetect, &GlobalTransform)>,
+    t: Res<Time>,
+) {
+    for (e, mut stuck, xf) in q_enemy.iter_mut() {
+        stuck.timer.tick(t.delta());
+        let enemy_pos = xf.translation.truncate();
+        if enemy_pos.distance(stuck.pos) > stuck.radius {
+            stuck.pos = enemy_pos;
+            stuck.timer.reset();
+        }
+        if stuck.timer.finished() {
+            commands.entity(e).despawn();
+            cfg.count -= 1;
         }
     }
 }
