@@ -165,7 +165,6 @@ pub fn player_shoot(
         player_state.new.1 = PlayerShootState::Shooting;
 
         let cross_transform = query_cross.single_mut();
-        let shoot_dir = (cross_transform.translation - player_transform.translation).normalize();
         let shoot_offset = player_transform
             .rotation
             .mul_vec3(weapon.projectile_spawn_offset);
@@ -174,6 +173,9 @@ pub fn player_shoot(
             pt.translation += shoot_offset;
             pt
         };
+
+        let shoot_dir = (cross_transform.translation - spawn_transform.translation).normalize();
+
 
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
