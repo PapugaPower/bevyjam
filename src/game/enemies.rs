@@ -234,6 +234,7 @@ pub fn enemy_despawn(
 }
 */
 
+#[allow(clippy::complexity)]
 pub fn enemy_damage(
     time: Res<Time>,
     mut damage_event: EventWriter<DamageEvent>,
@@ -433,6 +434,7 @@ pub fn enemy_player_search(
     }
 }
 
+#[allow(clippy::complexity)]
 pub fn enemy_walk(
     mut q_set: QuerySet<(
         QueryState<&mut Transform, With<Enemy>>,
@@ -527,6 +529,7 @@ pub fn debug_enemy_spawn(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_zones(
     mut commands: Commands,
     q_player: Query<&GlobalTransform, With<Player>>,
@@ -574,7 +577,7 @@ pub fn spawn_zones(
         .collect();
 
     // sort zones by distance to the player
-    zones.sort_unstable_by_key(|(e, pos)| FloatOrd(pos.distance_squared(playerpos)));
+    zones.sort_unstable_by_key(|(_e, pos)| FloatOrd(pos.distance_squared(playerpos)));
 
     for (e, pos) in zones {
         let pos = pos.extend(0.);

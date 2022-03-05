@@ -1,7 +1,7 @@
 use crate::game::damage::{Health, Pulsing};
 use bevy::prelude::*;
 
-#[derive(Debug, Component)]
+#[derive(Component, Debug)]
 pub enum ExplosiveObjectState {
     NotDetonated,
     Exploding(Timer),

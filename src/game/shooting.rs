@@ -2,7 +2,7 @@ use crate::game::crosshair::Crosshair;
 use crate::game::damage::{DamageAreaShape, DamageEvent, DamageSource, Pulsing, PulsingBundle};
 use crate::game::enemies::Enemy;
 use crate::game::phys_layers::PhysLayer;
-use crate::game::player::{Player, PlayerState, PlayerShootState};
+use crate::game::player::{Player, PlayerShootState, PlayerState};
 use crate::game::{GameAssets, GameAudioChannel};
 use bevy::prelude::*;
 use bevy_kira_audio::{Audio, AudioSource};
@@ -129,6 +129,7 @@ impl Default for WeaponryBundle {
     }
 }
 
+#[allow(clippy::complexity)]
 pub fn player_shoot(
     mut commands: Commands,
     mut ev_fired: EventWriter<PlayerFiredEvent>,
@@ -175,7 +176,6 @@ pub fn player_shoot(
         };
 
         let shoot_dir = (cross_transform.translation - spawn_transform.translation).normalize();
-
 
         let now = time.time_since_startup().as_secs_f32();
         if last_shoot.time + weapon.fire_rate <= now {
@@ -385,13 +385,14 @@ pub fn gun_reload(
             spare_ammo.current -= fill;
         }
         return;
-    } 
+    }
 
     if keys.just_pressed(KeyCode::R) {
         if spare_ammo.current < 1 || mag.current == mag.max {
             return;
         }
-        mag.current_reload += time.delta_seconds(); // add delta early, acts as a flog
+        // add delta early, acts as a flog
+        mag.current_reload += time.delta_seconds();
     }
 }
 
@@ -416,33 +417,32 @@ pub fn handle_impact_audio(
     assets: Res<GameAssets>,
     audio: Res<Audio>,
     channel: Res<GameAudioChannel>,
-    mut commands: Commands,
     mut event: EventReader<BulletImpactEvent>,
 ) {
-    for ev in event.iter() {
-        let mut untyped_audio: HandleUntyped;
+    // only first iteration to reduce audio spam
+    for ev in event.iter().take(1) {
         let mut rng = rand::thread_rng();
-        match ev.surface {
+        let untyped_audio = match ev.surface {
             ImpactSurface::World => {
                 let max = assets.world_impacts.len();
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.world_impacts.clone();
-                untyped_audio = assets.world_impacts[idx].clone();
+                assets.world_impacts[idx].clone()
             }
             ImpactSurface::Monster => {
                 let max = assets.monster_impacts.len();
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.monster_impacts.copy();
-                untyped_audio = assets.monster_impacts[idx].clone();
+                assets.monster_impacts[idx].clone()
             }
             ImpactSurface::Player => {
                 // TODO: change to proper sounds
                 let max = assets.monster_impacts.len();
                 let idx = rng.gen_range(0..max);
                 //let mut audio_vec = assets.monster_impacts.copy();
-                untyped_audio = assets.monster_impacts[idx].clone();
+                assets.monster_impacts[idx].clone()
             }
-        }
+        };
 
         let clip: Handle<AudioSource> = Handle::weak(untyped_audio.id);
         audio.play_in_channel(clip, &channel.0);
@@ -459,12 +459,5 @@ pub fn handle_impact_audio(
             a.max_volume = 0.85;
             a
         });*/
-        return; // exit after first iteration to reduce audio spam
     }
 }
-
-// pub fn debug_damage_event_reader(mut events: EventReader<DamageEvent>) {
-//     for e in events.iter() {
-//         debug!("damage event: {:?}", e);
-//     }
-// }

@@ -259,6 +259,7 @@ pub fn animations_init(
     ));
 }
 
+#[allow(clippy::complexity)]
 pub fn animations_removal(
     mut commands: Commands,
     animations: Query<
@@ -275,6 +276,7 @@ pub fn animations_removal(
     }
 }
 
+#[allow(clippy::complexity)]
 pub fn animation_player(
     mut commands: Commands,
     animations: Res<PlayerAnimations>,
