@@ -1,4 +1,4 @@
-use super::animations::AnimationBundle;
+use super::animations::{AnimationBundle, AnimationPausableBundle};
 use super::shooting::WeaponryBundle;
 use super::SpatialAudioReceptor;
 use crate::game::damage::Health;
@@ -79,7 +79,7 @@ impl Default for PlayerBundle {
 pub fn init_player(mut commands: Commands) {
     let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 2.0));
     let _x = commands
-        .spawn_bundle(AnimationBundle::from_default_with_transform_size(
+        .spawn_bundle(AnimationBundle::default_with_transform_size(
             player_transform,
             Some(Vec2::new(64.0, 64.0)),
         ))
@@ -98,7 +98,7 @@ pub fn init_player(mut commands: Commands) {
         .insert(CollisionShape::Sphere { radius: 24.0 })
         .insert(SpatialAudioReceptor)
         .with_children(|commands| {
-            commands.spawn_bundle(AnimationBundle::from_default_with_transform_size(
+            commands.spawn_bundle(AnimationPausableBundle::default_with_transform_size(
                 Transform::from_translation(Vec3::new(0.0, 0.0, -1.0)),
                 Some(Vec2::new(32.0, 32.0)),
             ))
