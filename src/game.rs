@@ -35,9 +35,9 @@ use hints::*;
 pub mod sc1;
 pub use sc1::Scenario1Plugin;
 
-// pub mod dev;
+pub mod dev;
 
-// pub use dev::DevPlaygroundPlugin;
+pub use dev::DevPlaygroundPlugin;
 
 pub mod blueprints;
 pub mod collider;

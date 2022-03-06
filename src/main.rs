@@ -21,7 +21,7 @@ mod scene_exporter;
 #[derive(IntoEnumIterator)]
 pub enum GameMode {
     Scenario1,
-    //DevPlayground,
+    DevPlayground,
 }
 
 /// Application states
@@ -103,19 +103,19 @@ fn main() {
         app.add_plugin(ui::hud::HudPlugin {state: AppState::InGame(mode)});
     }
 
-    // app.add_plugin(game::DevPlaygroundPlugin {
-    //     loading_state: AppState::GameAssetLoading(GameMode::DevPlayground),
-    //     state: AppState::InGame(GameMode::DevPlayground),
-    // });
+    app.add_plugin(game::DevPlaygroundPlugin {
+        loading_state: AppState::GameAssetLoading(GameMode::DevPlayground),
+        state: AppState::InGame(GameMode::DevPlayground),
+    });
     app.add_plugin(game::Scenario1Plugin {
         loading_state: AppState::GameAssetLoading(GameMode::Scenario1),
         state: AppState::InGame(GameMode::Scenario1),
     });
 
     app.add_plugin(util::UtilPlugin);
-    //app.add_plugin(editor::DevEditorPlugin);
+    app.add_plugin(editor::DevEditorPlugin);
     app.add_plugin(game::blueprints::BlueprintsPlugin);
-    //app.add_plugin(scene_exporter::SerializePlugin);
+    app.add_plugin(scene_exporter::SerializePlugin);
 
     // debug systems; uncomment if needed
     // app.add_system(debug_state);
