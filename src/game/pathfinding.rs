@@ -81,33 +81,71 @@ fn check_node_validity(q: &Query<(&Transform, &CollisionShape), With<Wall>>, rad
         let col_pos = xf.translation;
         let col_rot = xf.rotation.to_euler(EulerRot::XYZ).2;
         if let CollisionShape::Cuboid {half_extends, border_radius} = shape {
-            let col_size_x = half_extends.x;
-            let col_size_y = half_extends.y;
-            let rel = pos.extend(0.) - col_pos;
-            let local_x = f32::cos(col_rot) * rel.x + f32::cos(col_rot - PI * 0.5) * rel.y;
-            let local_y = f32::sin(col_rot) * rel.x + f32::sin(col_rot - PI * 0.5) * rel.y; 
-            
-            //let delta_x = f32::min(local_x, col_size_x);
-            //let delta_y = f32::min(local_y, col_size_y);
-            
-            if f32::abs(local_x) - radius < col_size_x && f32::abs(local_y) - radius < col_size_y  { return false; }
+            let overlap = rect_circle_overlap(
+                Vec2::new(col_pos.x, col_pos.y),
+                Vec2::new(half_extends.x, half_extends.y),
+                col_rot,
+                Vec2::new(pos.x, pos.y),
+                radius);
+
+            if overlap { return false; }
         }
-        
         c += 1;
-        
-        /*
-        rel_x = shape_x - rect_x;
-        rel_y = shape_y - rect_y;
-        angle = -rect_angle;
-        local_x = cos(angle) * rel_x + cos(angle - pi / 2) * rel_y;
-        local_y = sin(angle)  * rel_x + sin(angle - pi / 2) * rel_y;
-        
-        delta_x = min(local_x, rect_width);
-        delta_y = min(local_y, rect_height);
-        return delta_x * delta_x + delta_y * delta_y < circle_radius * circle_radius;
-         */
+
     }
     info!("Checked {} colliders, no collision found", c.to_string());
 
     return true;
+}
+
+fn rect_circle_overlap(rect_pos: Vec2, rect_dim: Vec2, rect_rot_z: f32, c_pos: Vec2, c_radius: f32)
+    -> bool {
+    let rel = c_pos - rect_pos;
+    let local_x = f32::cos(rect_rot_z) * rel.x + f32::cos(rect_rot_z - PI * 0.5) * rel.y;
+    let local_y = f32::sin(rect_rot_z) * rel.x + f32::sin(rect_rot_z - PI * 0.5) * rel.y;
+
+    f32::abs(local_x) - c_radius < rect_dim.x && f32::abs(local_y) - c_radius < rect_dim.y
+}
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+    
+    #[test] // Smaller circle fully inside the rect
+    fn test_circle_overlap_a() {
+        let x = rect_circle_overlap(Vec2::ZERO, Vec2::ONE, 0.0, Vec2::ZERO, 0.15);
+        assert_eq!(x, true);
+    }
+
+    // Larger circle fully encompassing the rect
+    #[test]
+    fn test_circle_overlap_b() {
+        let x = rect_circle_overlap(Vec2::ZERO, Vec2::ONE, 0.0, Vec2::ZERO, 3.0);
+        assert_eq!(x, true);
+    }
+    
+    // Larger circle slightly overlapping the rect
+    #[test]
+    fn test_circle_overlap_c() {
+        let x = rect_circle_overlap(Vec2::ZERO, Vec2::ONE, 0.0, Vec2::X, 1.2);
+        assert_eq!(x, true);
+    }
+
+    #[test] // Offset test
+    fn test_circle_overlap_d() {
+        let x = rect_circle_overlap(Vec2::X * 2.01, Vec2::ONE, 0.0, Vec2::ZERO, 1.0);
+        assert_eq!(x, false);
+    }
+
+    #[test] // Rotation test
+    fn test_circle_overlap_e() {
+        let x = rect_circle_overlap(Vec2::X * 2.01, Vec2::ONE, 45.0, Vec2::ZERO, 1.0);
+        assert_eq!(x, true);
+    }
+
+    #[test] // Rotation + offset test
+    fn test_circle_overlap_f() {
+        let x = rect_circle_overlap(Vec2::X * 3.01, Vec2::ONE, 45.0, Vec2::ZERO, 1.0);
+        assert_eq!(x, false);
+    }
 }
