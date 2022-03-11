@@ -93,8 +93,7 @@ pub fn pulsation_controller(
                 &shape.into(),
                 transform.translation,
                 transform.rotation,
-                CollisionLayers::all::<PhysLayer>(),
-                &mut |e| {
+                |e| {
                     damage_event.send(DamageEvent {
                         entity: e,
                         source: DamageSource::Weapon,
