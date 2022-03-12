@@ -99,8 +99,11 @@ pub fn generate_grid(
     }
     nav_grid.complete = true;
     state.ran = true;
+
+    let res = calculate_path(Vec2::ZERO, Vec2::new(0.0, -200.0), &nav_grid);
+    println!("Initial path has {} nodes", res.len());
 }
-/*
+
 pub fn calculate_path(
     from: Vec2, 
     to: Vec2,
@@ -108,41 +111,146 @@ pub fn calculate_path(
 ) -> Vec<Vec2> {
     let mut output = vec![from];
     let start_node_idx = closest_cell(from);
-    let mut parents = vec![-1, grid.positions.len()];
-    let mut h_cost = vec![-1.0, grid.positions.len()];
-    let mut open_nodes = binary_heap_plus::BinaryHeap::new_min();
-    let mut closed_nodes = vec![0, grid.positions.len()];
+    let end_node_idx = closest_cell(to);
+    let end_node_coord = coord_from_1d(SIDE_NODE_NO, end_node_idx);
+    let mut parents = vec![-1; grid.positions.len()];
+    let mut h_cost = vec![-1.0; grid.positions.len()];
+    let mut g_cost = vec![-1.0; grid.positions.len()];
+    let mut f_cost = vec![-1.0; grid.positions.len()];
+    let mut open_nodes = Vec::<i32>::new();
+    let mut closed_nodes = vec![0; grid.positions.len()];
+    // ^ i used a flattened grid vector for each parameter,
+    //   since it was easier to reason about, but it's not optimal
     
     open_nodes.push(start_node_idx);
-    let out = check_node(
-        open_nodes, 
-        closed_nodes, 
-        parents, 
-        h_cost, 
-        grid, 
-        output);
-
-    out.1
+    g_cost[start_node_idx as usize] = 0.0;
+    let mut last_result = 1;
+    let mut iters = 2000;
+    while last_result == 1 {
+        last_result = check_node(
+            &mut open_nodes,
+            &mut closed_nodes,
+            &mut parents,
+            &mut h_cost,
+            &mut g_cost,
+            &mut f_cost,
+            &grid,
+            end_node_idx,
+            end_node_coord);
+        iters -= 1;
+        if iters < 0 { 
+            error!("A* exceeded 2000 iterations for a single path!");
+            last_result = 0
+        }
+    }
+    
+    if last_result == 0 {
+        output.push(grid.positions[start_node_idx as usize]);
+        return output;
+    }
+    else {
+        output = build_path(&parents, end_node_idx as usize, &grid)
+    }
+    
+    output
 }
 
-fn check_node(&mut open_nodes: BinaryHeap<i32, MinComparator>,
-              &mut closed_nodes: Vec<usize>,
-              &mut parents: Vec<usize>,
-              &mut h_cost: Vec<f64>,
-              grid: &NavGrid, 
-              &mut output: Vec<Vec2>
-) -> (bool, Vec<Vec2>){
-
-
-    (true, vec![])
+fn check_node(open_nodes: &mut Vec<i32>,
+              closed_nodes: &mut Vec<i32>,
+              parents: &mut Vec<i32>,
+              h_cost: &mut Vec<f64>,
+              g_cost: &mut Vec<f64>,
+              f_cost: &mut Vec<f64>,
+              grid: &NavGrid,
+              end_node_idx: i32,
+              end_node_coord: (i32, i32)
+) -> i32 {
+    sort_open(open_nodes, f_cost);
+    let lowest_cost_node = open_nodes.pop();
+    if let Some(curr_node_idx) = lowest_cost_node {
+        let cni_us = curr_node_idx as usize;
+        closed_nodes[cni_us] = 1;
+        if end_node_idx == curr_node_idx {
+            return 2; // found the target!
+        }
+        // we're not at target yet, check linked nodes
+        for iter_idx in 0..grid.links[cni_us].len(){
+            let linked_idx = *&grid.links[cni_us][iter_idx];
+            let link_idx_us = linked_idx as usize;
+            
+            // ignore node if unwalkable or already closed
+            if linked_idx == -1 || !grid.valid[link_idx_us] || closed_nodes[link_idx_us] == 1 { continue; }
+            
+            // check if already in the open list
+            let mut node_already_open = false;
+            for n in open_nodes.iter(){
+                if *n == link_idx_us as i32 {
+                    node_already_open = true;
+                    break;
+                }
+            }
+            // if already open, check if it's the better path
+            if node_already_open{
+                let new_g_cost = g_cost[cni_us] + cost_for_link_dir(iter_idx);
+                if new_g_cost < g_cost[link_idx_us]{
+                    g_cost[link_idx_us] = new_g_cost;
+                    f_cost[link_idx_us] = new_g_cost + h_cost[link_idx_us];
+                    parents[link_idx_us] = curr_node_idx;
+                }
+            } else { // if not, calculate and store H F G values, set parent, and add to open
+                parents[link_idx_us] = curr_node_idx;
+                g_cost[link_idx_us] = g_cost[cni_us] + cost_for_link_dir(iter_idx);
+                let grid_location = coord_from_1d(SIDE_NODE_NO, linked_idx);
+                h_cost[link_idx_us] = (end_node_coord.0 as f64 - grid_location.0 as f64).abs() + 
+                    (end_node_coord.1 as f64 - grid_location.1 as f64).abs();
+                f_cost[link_idx_us] = g_cost[link_idx_us] + h_cost[link_idx_us];
+                open_nodes.push(linked_idx);
+            }
+        }
+        return 1;
+    }
+    else {
+        error!("Pathfinding ran out of open nodes!");
+        return 0;
+    }
+    
+    // return values: 0 = path failed, no options remain
+    //                1 = destination not reached, but more options remain
+    //                2 = destination reached
 }
-*/
+
+fn build_path(
+    parents: &Vec<i32>, 
+    target_index: usize,
+    grid: &NavGrid
+) -> Vec<Vec2> {
+    let mut output = Vec::<Vec2>::new();
+    output.push(grid.positions[target_index]);
+    let mut parent = parents[target_index];
+    while parent != -1{
+        output.push(grid.positions[parent as usize]);
+        parent = parents[parent as usize];
+    }
+    
+    output.reverse();
+    output
+}
+
+fn cost_for_link_dir(link_dir: usize) -> f64 {
+    if link_dir == 0 || link_dir == 2 || link_dir == 5 || link_dir == 7
+        { return 1.4 } // diagonal links are proportionally higher cost, due to being longer
+    1.0
+}
+
+fn sort_open(open_vec: &mut Vec<i32>, g_cost_vec: &Vec<f64>){
+    open_vec.sort_unstable_by(|a,b| g_cost_vec[*b as usize].partial_cmp(&g_cost_vec[*a as usize]).unwrap())
+}
+
 pub fn draw_links(
     mut lines: ResMut<DebugLines>,
     nav_grid: Res<NavGrid>,
     player_q: Query<&Transform, With<Player>>
 ){
-    //let visited = Vec::<usize>::new();
     if !nav_grid.complete {return;}
     
     let ppos = player_q.single().translation.truncate();
@@ -283,6 +391,7 @@ fn closest_cell(
     let mut coords = offset * RESOLUTION;
     let rounded_x = f32::round(coords.x) as i32;
     let rounded_y = f32::round(coords.y) as i32;
+    debug!("Cell closest to {} is x:{} y:{}", position.to_string(), rounded_x.to_string(), rounded_y.to_string());
     return coord_to_1d(SIDE_NODE_NO, rounded_x, rounded_y);
 }
 
@@ -364,13 +473,15 @@ mod tests{
     }
     
     #[test]
-    fn test_mutable_borrow(){
-        let mut orig = Vec2::new(5.0, 1.0);
-        do_a_thing(&orig);
-        assert_eq!(orig.x, 10.0);
-    }
-    
-    fn do_a_thing(data: &Vec2){
-        data.x = data.x + 5.0;
+    fn test_sort_open_ordering(){
+        let mut vec_a = vec![0,1,2,3];
+        let vec_ref = vec![7.0, 1.0, 5.0, 12.0];
+        sort_open(&mut vec_a, &vec_ref);
+        let pop1 = vec_a.pop().unwrap();
+        let pop2 = vec_a.pop().unwrap();
+        let pop3 = vec_a.pop().unwrap();
+        assert_eq!(pop1, 1);
+        assert_eq!(pop2, 2);
+        assert_eq!(pop3, 0);
     }
 }
