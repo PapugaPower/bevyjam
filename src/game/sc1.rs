@@ -7,7 +7,7 @@ use heron::CollisionShape;
 use iyes_bevy_util::BevyState;
 use crate::game::collider::ColliderKind::Wall;
 use crate::game::GameAssets;
-use crate::game::pathfinding::{draw_cells, draw_links, draw_path_to_debug_point, generate_grid, NavGrid};
+use crate::game::pathfinding::{AStarBuffer, draw_cells, draw_links, draw_path_to_debug_point, generate_grid, NavGrid};
 
 use crate::game::timer::GameTimer;
 
@@ -27,6 +27,7 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
             .with_asset_collection_file("meta/sc1.assets")
             .with_collection::<Sc1Assets>()
             .init_resource::<NavGrid>()
+            .init_resource::<AStarBuffer>()
             .build(app);
 
         // add systems to `self.state`
@@ -42,7 +43,7 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
-                .with_run_criteria(FixedTimestep::step(1.0 / 5.0))
+                .with_run_criteria(FixedTimestep::step(5.0))
                 .with_system(draw_path_to_debug_point)
                 .with_system(draw_cells)
         );

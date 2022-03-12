@@ -1,5 +1,6 @@
 use binary_heap_plus::{BinaryHeap, MinComparator};
 use std::f32::consts::PI;
+use std::time::Instant;
 use std::vec;
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::*;
@@ -23,6 +24,15 @@ pub struct NavGrid {
     pub complete: bool,
 }
 
+#[derive(Default)]
+pub struct AStarBuffer {
+    pub parents: Vec<i32>,
+    pub h_cost: Vec<f64>,
+    pub g_cost: Vec<f64>,
+    pub f_cost: Vec<f64>,
+    pub closed: Vec<i32>
+}
+
 #[derive(Component)]
 pub struct NodeDebugToken;
 
@@ -41,7 +51,8 @@ const OFFSET_Y: f32= SIZE /2.0 + 2000.0;
 pub fn generate_grid(
     q: Query<(&Transform, &CollisionShape), With<Wall>>, 
     mut state: Local<GridState>, 
-    mut nav_grid: ResMut<NavGrid>
+    mut nav_grid: ResMut<NavGrid>,
+    mut astar_buffer: ResMut<AStarBuffer>
 ){
     if state.ran {return;}
     if nav_grid.complete {return;}
@@ -96,6 +107,14 @@ pub fn generate_grid(
         let cost = 1.0 + (8.0-count)*0.15;
         nav_grid.costs.push(cost)
     }
+
+    // init astar buffer
+    astar_buffer.parents = vec![-1; nav_grid.positions.len()];
+    astar_buffer.closed = vec![0; nav_grid.positions.len()];
+    astar_buffer.h_cost = vec![-1.0; nav_grid.positions.len()];
+    astar_buffer.g_cost = vec![-1.0; nav_grid.positions.len()];
+    astar_buffer.f_cost = vec![-1.0; nav_grid.positions.len()];
+    
     nav_grid.complete = true;
     state.ran = true;
 }
@@ -103,40 +122,42 @@ pub fn generate_grid(
 pub fn calculate_path(
     from: Vec2, 
     to: Vec2,
-    grid: &NavGrid
+    grid: &NavGrid,
+    buffer: &mut AStarBuffer
 ) -> Vec<Vec2> {
+    let timer = Instant::now();
     let mut output = vec![from];
     let start_node_idx = closest_cell_1d(from, Vec2::new(OFFSET_X, OFFSET_Y), SIDE_NODE_NO, RESOLUTION);
     let end_node_idx = closest_cell_1d(to, Vec2::new(OFFSET_X, OFFSET_Y), SIDE_NODE_NO, RESOLUTION);
     let end_node_coord = coord_from_1d(SIDE_NODE_NO, end_node_idx);
-    let mut parents = vec![-1; grid.positions.len()];
-    let mut h_cost = vec![-1.0; grid.positions.len()];
-    let mut g_cost = vec![-1.0; grid.positions.len()];
-    let mut f_cost = vec![-1.0; grid.positions.len()];
+    for n in 0..buffer.closed.len(){
+        buffer.closed[n] = 0; // reset closed nodes
+        buffer.parents[n] = -1;
+    }
+
     let mut open_nodes = Vec::<i32>::new(); // tried to use binary heap, but didn't know how to sort using another vector
-    let mut closed_nodes = vec![0; grid.positions.len()];
     // ^ i used a flattened grid vector for each parameter,
     //   since it was easier to reason about, but it's not optimal
     
     open_nodes.push(start_node_idx);
-    g_cost[start_node_idx as usize] = 0.0;
+    buffer.g_cost[start_node_idx as usize] = 0.0;
     let mut last_result = 1;
     let mut iters = 2500;
     while last_result == 1 {
         last_result = check_node(
             &mut open_nodes,
-            &mut closed_nodes,
-            &mut parents,
-            &mut h_cost,
-            &mut g_cost,
-            &mut f_cost,
+            &mut buffer.closed,
+            &mut buffer.parents,
+            &mut buffer.h_cost,
+            &mut buffer.g_cost,
+            &mut buffer.f_cost,
             &grid,
             end_node_idx,
             end_node_coord);
         iters -= 1;
         if iters < 0 { 
             error!("A* exceeded 2500 iterations for a single path!");
-            last_result = 0
+            last_result = 0;
         }
     }
     
@@ -145,9 +166,11 @@ pub fn calculate_path(
         output.push(grid.positions[start_node_idx as usize]);
     } else {
         //info!("A* built a complete path.");
-        output = build_path(&parents, end_node_idx as usize, &grid)
+        output = build_path(&buffer.parents, end_node_idx as usize, &grid)
     }
     //info!("1st node x: {} y: {}", output[0].x.to_string(), output[0].y.to_string());
+    let elapsed = timer.elapsed().as_nanos() as f64 / 1000000.0;
+    info!("Pathfinding time: {}ms", elapsed.to_string());
     output
 }
 
@@ -320,15 +343,18 @@ pub fn draw_cells(
 pub fn draw_path_to_debug_point(
     mut lines: ResMut<DebugLines>,
     nav_grid: Option<Res<NavGrid>>,
+    mut buffer: Option<ResMut<AStarBuffer>>,
     player_q: Query<&Transform, With<Player>>,
 ){
     if let Some(grid) = nav_grid{
         if !grid.complete { return; }
+        let mut bfr = buffer.unwrap();
         let ppos = player_q.single().translation;
-        let res = calculate_path(ppos.truncate(), Vec2::new(1418.4176, -1949.4218), &grid);
+        let res = calculate_path(ppos.truncate(), Vec2::new(1418.4176, -1949.4218), &grid, &mut bfr);
         for pt in 1..res.len(){
             lines.line_colored(res[pt-1].extend(0.1), res[pt].extend(0.1), 1.0, Color::rgba(0.9, 0.3, 0.3, 0.12));
         }
+
     } else {
         return;
     }
