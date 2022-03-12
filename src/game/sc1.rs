@@ -1,14 +1,13 @@
 use std::time::Duration;
 use bevy::core::FixedTimestep;
 use bevy::ecs::schedule::ShouldRun;
-
 use bevy::prelude::*;
 use bevy_asset_loader::{AssetLoader, AssetCollection};
 use heron::CollisionShape;
 use iyes_bevy_util::BevyState;
 use crate::game::collider::ColliderKind::Wall;
 use crate::game::GameAssets;
-use crate::game::pathfinding::{draw_cells, draw_links, generate_grid, NavGrid};
+use crate::game::pathfinding::{draw_cells, draw_links, draw_path_to_debug_point, generate_grid, NavGrid};
 
 use crate::game::timer::GameTimer;
 
@@ -39,14 +38,14 @@ impl<S: BevyState + Copy> Plugin for Scenario1Plugin<S> {
         );
         app.add_system_set(
             SystemSet::on_update(self.state)
-                //.with_run_criteria(FixedTimestep::step(1.0 / 5.0))
                 .with_system(generate_grid)
-                .with_system(draw_links)
-                .with_system(draw_cells)
-        );/*
+        );
         app.add_system_set(
             SystemSet::on_update(self.state)
-        );*/
+                .with_run_criteria(FixedTimestep::step(1.0 / 5.0))
+                .with_system(draw_path_to_debug_point)
+                .with_system(draw_cells)
+        );
         app.add_system_set(
             SystemSet::on_exit(self.state)
         );

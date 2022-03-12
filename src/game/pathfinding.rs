@@ -34,8 +34,8 @@ pub struct GridState{
 const SIZE: f32 = 11000.0;
 const RESOLUTION: f32 = 0.015; // points per unit
 const SIDE_NODE_NO: i32 = (RESOLUTION * SIZE) as i32;
-const OFFSET_X :f32= SIZE /2.0 + 2000.0;
-const OFFSET_Y :f32= SIZE /2.0 + 2000.0;
+const OFFSET_X: f32= SIZE /2.0 + 2000.0;
+const OFFSET_Y: f32= SIZE /2.0 + 2000.0;
 
 
 pub fn generate_grid(
@@ -55,8 +55,8 @@ pub fn generate_grid(
     nav_grid.valid.clear();
     nav_grid.links.clear();
     
-    for x in 0..SIDE_NODE_NO {
-        for y in 0..SIDE_NODE_NO {
+    for y in 0..SIDE_NODE_NO {
+        for x in 0..SIDE_NODE_NO {
             let x_coord = x as f32/RESOLUTION;
             let y_coord = y as f32/RESOLUTION;
             let pos = Vec2::new(x_coord - offset.x, y_coord - offset.y);
@@ -64,10 +64,9 @@ pub fn generate_grid(
             nav_grid.positions.push(pos);
         }
     }
-    info!("Created {} nodes", nav_grid.positions.len().to_string());
+    info!("NavGrid created with {} nodes", nav_grid.positions.len().to_string());
     // Build links
     for idx in 0.. nav_grid.positions.len() {
-        let pos = &nav_grid.positions[idx];
         let (grid_x, grid_y) = coord_from_1d(SIDE_NODE_NO, idx as i32);
         
         if !nav_grid.valid[idx] { // omit invalid cells
@@ -99,9 +98,6 @@ pub fn generate_grid(
     }
     nav_grid.complete = true;
     state.ran = true;
-
-    let res = calculate_path(Vec2::ZERO, Vec2::new(0.0, -200.0), &nav_grid);
-    println!("Initial path has {} nodes", res.len());
 }
 
 pub fn calculate_path(
@@ -110,14 +106,14 @@ pub fn calculate_path(
     grid: &NavGrid
 ) -> Vec<Vec2> {
     let mut output = vec![from];
-    let start_node_idx = closest_cell(from);
-    let end_node_idx = closest_cell(to);
+    let start_node_idx = closest_cell_1d(from, Vec2::new(OFFSET_X, OFFSET_Y), SIDE_NODE_NO, RESOLUTION);
+    let end_node_idx = closest_cell_1d(to, Vec2::new(OFFSET_X, OFFSET_Y), SIDE_NODE_NO, RESOLUTION);
     let end_node_coord = coord_from_1d(SIDE_NODE_NO, end_node_idx);
     let mut parents = vec![-1; grid.positions.len()];
     let mut h_cost = vec![-1.0; grid.positions.len()];
     let mut g_cost = vec![-1.0; grid.positions.len()];
     let mut f_cost = vec![-1.0; grid.positions.len()];
-    let mut open_nodes = Vec::<i32>::new();
+    let mut open_nodes = Vec::<i32>::new(); // tried to use binary heap, but didn't know how to sort using another vector
     let mut closed_nodes = vec![0; grid.positions.len()];
     // ^ i used a flattened grid vector for each parameter,
     //   since it was easier to reason about, but it's not optimal
@@ -125,7 +121,7 @@ pub fn calculate_path(
     open_nodes.push(start_node_idx);
     g_cost[start_node_idx as usize] = 0.0;
     let mut last_result = 1;
-    let mut iters = 2000;
+    let mut iters = 2500;
     while last_result == 1 {
         last_result = check_node(
             &mut open_nodes,
@@ -139,22 +135,23 @@ pub fn calculate_path(
             end_node_coord);
         iters -= 1;
         if iters < 0 { 
-            error!("A* exceeded 2000 iterations for a single path!");
+            error!("A* exceeded 2500 iterations for a single path!");
             last_result = 0
         }
     }
     
     if last_result == 0 {
+        //error!("A* couldn't find path, returning start node.");
         output.push(grid.positions[start_node_idx as usize]);
-        return output;
-    }
-    else {
+    } else {
+        //info!("A* built a complete path.");
         output = build_path(&parents, end_node_idx as usize, &grid)
     }
-    
+    //info!("1st node x: {} y: {}", output[0].x.to_string(), output[0].y.to_string());
     output
 }
 
+// Note: A* using Manhattan heuristic
 fn check_node(open_nodes: &mut Vec<i32>,
               closed_nodes: &mut Vec<i32>,
               parents: &mut Vec<i32>,
@@ -272,50 +269,70 @@ pub fn draw_links(
 pub fn draw_cells(
     mut cmd: Commands, 
     q: Query<Entity, With<NodeDebugToken>>, 
-    nav_grid: Res<NavGrid>,
+    nav_grid: Option<Res<NavGrid>>,
     q_player: Query<&Transform, With<Player>>
 ) {
-    
-    if !nav_grid.complete {return;}
-    
-    for e in q.iter(){
-        cmd.entity(e).despawn();
-    }
-    const DISPLAY_DIR_NO :i32 = 10;
-    let ppos = q_player.single().translation.truncate();
-    let offset = Vec2::new(OFFSET_X + ppos.y, ppos.x + OFFSET_Y); // swap axes
-    let mut coords = offset * RESOLUTION;
-    let rounded_x = f32::round(coords.x) as i32;
-    let rounded_y = f32::round(coords.y) as i32;
-    
-    for x in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
-        for y in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
-            let idx = coord_to_1d(SIDE_NODE_NO, rounded_x+x, rounded_y+y) as usize;
-            let pos = nav_grid.positions[idx];
+    if let Some(grid) = nav_grid{
+        if !grid.complete { return; }
 
-            let is_valid = nav_grid.valid[idx];
-            let mut color = Color::WHITE;
-            if is_valid {
-                let blue = nav_grid.costs[idx] - 1.0;
-                color = Color::rgba(0.0, 1.0 - blue, blue, 0.08);
-            }
-            else {
-                color = Color::rgba(1.0, 0.0, 0.0, 0.08);
-            }
-
-            cmd.spawn_bundle(SpriteBundle{
-                sprite: Sprite {
-                    color,
-                    custom_size: Option::from(Vec2::new(12.0, 12.0)),
-                    ..Default::default()
-                },
-                transform: Transform::from_translation(pos.extend(0.5)),
-                ..Default::default()
-            })
-                .insert(NodeDebugToken);
-            ;
+        for e in q.iter(){
+            cmd.entity(e).despawn();
         }
+        const DISPLAY_DIR_NO :i32 = 10;
+        let ppos = q_player.single().translation.truncate();
+        let offset = Vec2::new(OFFSET_X + ppos.x, ppos.y + OFFSET_Y);
+        let mut coords = offset * RESOLUTION;
+        let rounded_x = f32::round(coords.x) as i32;
+        let rounded_y = f32::round(coords.y) as i32;
+
+        for x in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
+            for y in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
+                let idx = coord_to_1d(SIDE_NODE_NO, rounded_x+x, rounded_y+y) as usize;
+                let pos = grid.positions[idx];
+
+                let is_valid = grid.valid[idx];
+                let mut color = Color::WHITE;
+                if is_valid {
+                    let blue = grid.costs[idx] - 1.0;
+                    color = Color::rgba(0.0, 1.0 - blue, blue, 0.08);
+                }
+                else {
+                    color = Color::rgba(1.0, 0.0, 0.0, 0.08);
+                }
+
+                cmd.spawn_bundle(SpriteBundle{
+                    sprite: Sprite {
+                        color,
+                        custom_size: Option::from(Vec2::new(12.0, 12.0)),
+                        ..Default::default()
+                    },
+                    transform: Transform::from_translation(pos.extend(0.5)),
+                    ..Default::default()
+                })
+                    .insert(NodeDebugToken);
+                
+            }
+        }
+    } else { return; }
+        
+}
+
+pub fn draw_path_to_debug_point(
+    mut lines: ResMut<DebugLines>,
+    nav_grid: Option<Res<NavGrid>>,
+    player_q: Query<&Transform, With<Player>>,
+){
+    if let Some(grid) = nav_grid{
+        if !grid.complete { return; }
+        let ppos = player_q.single().translation;
+        let res = calculate_path(ppos.truncate(), Vec2::new(1418.4176, -1949.4218), &grid);
+        for pt in 1..res.len(){
+            lines.line_colored(res[pt-1].extend(0.1), res[pt].extend(0.1), 1.0, Color::rgba(0.9, 0.3, 0.3, 0.12));
+        }
+    } else {
+        return;
     }
+    
 }
 
 fn check_node_validity(q: &Query<(&Transform, &CollisionShape), With<Wall>>, radius: f32, pos: Vec2) 
@@ -338,7 +355,7 @@ fn check_node_validity(q: &Query<(&Transform, &CollisionShape), With<Wall>>, rad
         c += 1;
 
     }
-    info!("Checked {} colliders, no collision found", c.to_string());
+    //info!("Checked {} colliders, no collision found", c.to_string());
 
     return true;
 }
@@ -379,20 +396,34 @@ fn coord_from_1d(side_dim: i32, idx: i32) -> (i32,i32) {
     (x,y)
 }
 
-fn coord_to_1d(side_dim: i32, x: i32, y:i32) -> i32
-{
+fn coord_to_1d(side_dim: i32, x: i32, y:i32) -> i32 {
     y * side_dim + x
 }
 
-fn closest_cell(
-    position: Vec2
+fn closest_cell_1d(
+    position: Vec2, 
+    grid_offset: Vec2, 
+    grid_size: i32,
+    grid_resolution: f32
 ) -> i32 {
-    let offset = Vec2::new(OFFSET_X + position.y, position.x + OFFSET_Y); // swap axes
-    let mut coords = offset * RESOLUTION;
-    let rounded_x = f32::round(coords.x) as i32;
-    let rounded_y = f32::round(coords.y) as i32;
-    debug!("Cell closest to {} is x:{} y:{}", position.to_string(), rounded_x.to_string(), rounded_y.to_string());
-    return coord_to_1d(SIDE_NODE_NO, rounded_x, rounded_y);
+    let coord = closest_cell_2d(position, grid_offset, grid_size, grid_resolution);
+    return coord_to_1d(SIDE_NODE_NO, coord.0, coord.1);
+}
+
+fn closest_cell_2d(
+    position: Vec2, 
+    grid_offset: Vec2, 
+    grid_size: i32,
+    grid_resolution: f32
+) -> (i32,i32) {
+    let pos_in_gridspace = Vec2::new(grid_offset.x + position.x, grid_offset.y + position.y);
+    let mut coords = pos_in_gridspace * grid_resolution;
+    // clamp result to grid size
+    let mut rounded_x = i32::clamp(f32::round(coords.x) as i32, 0, grid_size-1);
+    let mut rounded_y = i32::clamp(f32::round(coords.y) as i32, 0, grid_size-1);
+    
+    //debug!("Cell closest to {} is x:{} y:{}", position.to_string(), rounded_x.to_string(), rounded_y.to_string());
+    return (rounded_x, rounded_y);
 }
 
 fn rect_circle_overlap(rect_pos: Vec2, rect_dim: Vec2, rect_rot_z: f32, c_pos: Vec2, c_radius: f32)
@@ -415,9 +446,9 @@ fn is_point_within_rect(point: Vec2, rect_pos: Vec2, rect_dim: Vec2, rect_rot_z:
 }
 
 #[cfg(test)]
-mod tests{
+mod tests {
     use super::*;
-    
+
     #[test] // Smaller circle fully inside the rect
     fn test_circle_overlap_a() {
         let mut x = rect_circle_overlap(Vec2::ZERO, Vec2::ONE, 0.0, Vec2::ZERO, 0.15);
@@ -429,7 +460,7 @@ mod tests{
         x = rect_circle_overlap(Vec2::X * 3.01, Vec2::ONE, 45.0, Vec2::ZERO, 1.0);
         assert_eq!(x, false);
     }
-    
+
     #[test]
     fn test_point_within_rect_a() {
         let mut x = is_point_within_rect(Vec2::new(0.0, 1.1), Vec2::ZERO, Vec2::ONE, 45.0);
@@ -437,7 +468,7 @@ mod tests{
         x = is_point_within_rect(Vec2::new(0.0, 1.1), Vec2::ZERO, Vec2::ONE, 0.0);
         assert_eq!(x, false);
     }
-    
+
     #[test]
     fn test_coord_to_1d() {
         let a = coord_to_1d(4, 2, 1);
@@ -449,32 +480,32 @@ mod tests{
         let d = coord_to_1d(4, 0, 0);
         assert_eq!(d, 0);
     }
-    
+
     #[test]
-    fn test_1d_to_coord(){
+    fn test_1d_to_coord() {
         let a = coord_from_1d(4, 0);
         let b = coord_from_1d(4, 15);
         let c = coord_from_1d(4, 3);
         let d = coord_from_1d(4, 10);
-        assert_eq!(a, (0,0));
-        assert_eq!(b, (3,3));
-        assert_eq!(c, (3,0));
-        assert_eq!(d, (2,2));
+        assert_eq!(a, (0, 0));
+        assert_eq!(b, (3, 3));
+        assert_eq!(c, (3, 0));
+        assert_eq!(d, (2, 2));
     }
-    
+
     #[test]
-    fn test_get_neighbours(){
+    fn test_get_neighbours() {
         let mut a = get_neighbours(4, 1, 1);
-        assert_eq!(a, vec![0,1,2,4,6,8,9,10]);
+        assert_eq!(a, vec![0, 1, 2, 4, 6, 8, 9, 10]);
         a = get_neighbours(4, 0, 0);
-        assert_eq!(a, vec![-1,-1,-1,-1,1,-1,4,5]);
+        assert_eq!(a, vec![-1, -1, -1, -1, 1, -1, 4, 5]);
         a = get_neighbours(4, 3, 3);
-        assert_eq!(a, vec![10,11,-1,14,-1,-1,-1,-1]);
+        assert_eq!(a, vec![10, 11, -1, 14, -1, -1, -1, -1]);
     }
-    
+
     #[test]
-    fn test_sort_open_ordering(){
-        let mut vec_a = vec![0,1,2,3];
+    fn test_sort_open_ordering() {
+        let mut vec_a = vec![0, 1, 2, 3];
         let vec_ref = vec![7.0, 1.0, 5.0, 12.0];
         sort_open(&mut vec_a, &vec_ref);
         let pop1 = vec_a.pop().unwrap();
@@ -483,5 +514,16 @@ mod tests{
         assert_eq!(pop1, 1);
         assert_eq!(pop2, 2);
         assert_eq!(pop3, 0);
+    }
+
+    #[test]
+    fn closest_node_search_clamps() {
+        let side_size = 1000;
+        let resolution = 0.01;
+        let position = Vec2::new(-3000.0, 5000.0);
+        let result = closest_cell_2d(position, Vec2::ZERO, side_size, resolution);
+        println!("result x:{} y:{}", result.0.to_string(), result.1.to_string());
+        assert_eq!(result.0, 0);
+        assert_eq!(result.1, 9);
     }
 }

@@ -623,7 +623,7 @@ pub fn spawn_zones(
         return;
     }
 
-    debug!("Trying to spawn new enemy.");
+    //debug!("Trying to spawn new enemy.");
 
     let mut rng = rand::thread_rng();
 
