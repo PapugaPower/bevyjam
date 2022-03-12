@@ -3,6 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
+use crate::game::pathfinding::{generate_grid, NavGrid};
 
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
@@ -22,7 +23,9 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
             .continue_to_state(self.state)
             .with_asset_collection_file("meta/dev.assets")
             .with_collection::<DevAssets>()
+            .init_resource::<NavGrid>()
             .build(app);
+        
 
         // add systems to `self.state`
         app.add_system_set(
@@ -36,6 +39,7 @@ impl<S: BevyState + Copy> Plugin for DevPlaygroundPlugin<S> {
         app.add_system_set(
             SystemSet::on_update(self.state)
 				.with_system(fake_dev_hint)
+                .with_system(generate_grid)
         );
         app.add_system_set(
             SystemSet::on_exit(self.state)
@@ -93,7 +97,7 @@ fn setup_scene(mut commands: Commands, assets: Res<DevAssets>) {
             custom_size: Some(Vec2::new(1920.0, 1080.0)),
             ..Default::default()
         },
-        transform: Transform::from_xyz(-2800.0, 800.0, -1.0),
+        transform: Transform::from_xyz(-0.0, 0.0, -1.0),
         global_transform: Default::default(),
         texture: assets.map_prototype.clone(),
         visibility: Default::default(),

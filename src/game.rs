@@ -93,7 +93,7 @@ impl<S: BevyState> Plugin for GamePlugin<S> {
                 .with_system(print_player_position)
                 // enemies
                 //.with_system(enemy_controller.label("enemy_controller"))
-                .with_system(spawn_zones)
+                //.with_system(spawn_zones)
                 .with_system(enemy_despawn_stuck)
                 .with_system(enemy_despawn_far)
                 .with_system(enemy_die.after("damage"))

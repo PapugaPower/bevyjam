@@ -41,11 +41,18 @@ pub struct PlayerState {
     pub new: (PlayerMoveState, PlayerShootState),
 }
 
+#[derive(Component, Debug)]
+pub struct PlayerSpawnData {
+    position: Vec3,
+}
+
 impl PlayerState {
     pub fn changed(&self) -> bool {
         self.current != self.new
     }
 }
+
+
 
 #[derive(Bundle)]
 pub struct PlayerBundle {
@@ -76,8 +83,8 @@ impl Default for PlayerBundle {
     }
 }
 
-pub fn init_player(mut commands: Commands) {
-    let player_transform = Transform::from_translation(Vec3::new(-2982.9265, 1052.7454, 2.0));
+pub fn init_player(mut commands: Commands, q: Query<&PlayerSpawnData>) {
+    let player_transform = Transform::from_translation(Vec3::new(0.0, 0.00, 2.0));
     let _x = commands
         .spawn_bundle(AnimationBundle::default_with_transform_size(
             player_transform,

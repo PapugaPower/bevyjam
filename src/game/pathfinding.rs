@@ -1,3 +1,4 @@
+use binary_heap_plus::{BinaryHeap, MinComparator};
 use std::f32::consts::PI;
 use std::vec;
 use bevy::math::{Vec2, Vec3};
@@ -18,6 +19,7 @@ pub struct NavGrid {
     pub costs: Vec<f32>,
     pub links: Vec<Vec<i32>>,
     pub valid: Vec<bool>,
+    pub paths: Vec<i32>,
     pub complete: bool,
 }
 
@@ -27,22 +29,27 @@ pub struct NodeDebugToken;
 #[derive(Default)]
 pub struct GridState{
     pub ran: bool,
-    
 }
 
-const SIZE: f32 = 15000.0;
+const SIZE: f32 = 11000.0;
 const RESOLUTION: f32 = 0.015; // points per unit
 const SIDE_NODE_NO: i32 = (RESOLUTION * SIZE) as i32;
+const OFFSET_X :f32= SIZE /2.0 + 2000.0;
+const OFFSET_Y :f32= SIZE /2.0 + 2000.0;
 
-pub fn generate_grid(mut commands: Commands, 
-                     q: Query<(&Transform, &CollisionShape), With<Wall>>, 
-                     mut state: Local<GridState>, 
-                     mut nav_grid: ResMut<NavGrid>){
-    if state.ran || nav_grid.complete {return;}
+
+pub fn generate_grid(
+    q: Query<(&Transform, &CollisionShape), With<Wall>>, 
+    mut state: Local<GridState>, 
+    mut nav_grid: ResMut<NavGrid>
+){
+    if state.ran {return;}
+    if nav_grid.complete {return;}
     
     if q.iter().count() < 1 {return;}
+    
+    let offset = Vec2::new(OFFSET_X, OFFSET_Y);
 
-    let offset = Vec2::new(SIZE /2.0 + 2000.0, SIZE /2.0 + 2000.0);
     nav_grid.costs.clear();
     nav_grid.positions.clear();
     nav_grid.valid.clear();
@@ -90,34 +97,46 @@ pub fn generate_grid(mut commands: Commands,
         let cost = 1.0 + (8.0-count)*0.15;
         nav_grid.costs.push(cost)
     }
-    
-    // draw markers (development only)
-    let mut i = 0;
-    for pos in &nav_grid.positions{
-        let is_valid = nav_grid.valid[i];
-        let mut color = Color::WHITE;
-        if is_valid {
-            let blue = nav_grid.costs[i] - 1.0;
-            color = Color::rgba(0.0, 1.0 - blue, blue, 0.05);
-        }
-        else {
-            color = Color::rgba(1.0, 0.0, 0.0, 0.05);
-        }
-        commands.spawn_bundle(SpriteBundle{
-            sprite: Sprite {
-                color: color,
-                flip_x: false,
-                flip_y: false,
-                custom_size: Option::from(Vec2::new(25.0, 25.0))
-            },
-            transform: Transform::from_xyz(pos.x, pos.y, 1.0),
-            ..Default::default()
-        });
-        i += 1
-    }
     nav_grid.complete = true;
     state.ran = true;
 }
+/*
+pub fn calculate_path(
+    from: Vec2, 
+    to: Vec2,
+    grid: &NavGrid
+) -> Vec<Vec2> {
+    let mut output = vec![from];
+    let start_node_idx = closest_cell(from);
+    let mut parents = vec![-1, grid.positions.len()];
+    let mut h_cost = vec![-1.0, grid.positions.len()];
+    let mut open_nodes = binary_heap_plus::BinaryHeap::new_min();
+    let mut closed_nodes = vec![0, grid.positions.len()];
+    
+    open_nodes.push(start_node_idx);
+    let out = check_node(
+        open_nodes, 
+        closed_nodes, 
+        parents, 
+        h_cost, 
+        grid, 
+        output);
+
+    out.1
+}
+
+fn check_node(&mut open_nodes: BinaryHeap<i32, MinComparator>,
+              &mut closed_nodes: Vec<usize>,
+              &mut parents: Vec<usize>,
+              &mut h_cost: Vec<f64>,
+              grid: &NavGrid, 
+              &mut output: Vec<Vec2>
+) -> (bool, Vec<Vec2>){
+
+
+    (true, vec![])
+}
+*/
 pub fn draw_links(
     mut lines: ResMut<DebugLines>,
     nav_grid: Res<NavGrid>,
@@ -131,16 +150,64 @@ pub fn draw_links(
     for idx in 0..nav_grid.positions.len() {
         if !nav_grid.valid[idx] {continue};
         let this_node_pos = nav_grid.positions[idx];
-        if (this_node_pos - ppos).length_squared() > 50000.0 {continue} 
+        if (this_node_pos - ppos).length_squared() > 500000.0 {continue} 
         let links = &nav_grid.links[idx];
         for link in links{
             if *link < 0 { continue }
             if !nav_grid.valid[*link as usize] {continue};
             let linked_pos = nav_grid.positions[*link as usize];
-            lines.line_colored(this_node_pos.extend(0.1), linked_pos.extend(0.1), 0.001, Color::rgba(0.3, 0.3, 0.3, 0.12));
+            lines.line_colored(this_node_pos.extend(0.1), linked_pos.extend(0.1), 1.0/5.0, Color::rgba(0.3, 0.3, 0.3, 0.12));
         }
     }
+}
+
+pub fn draw_cells(
+    mut cmd: Commands, 
+    q: Query<Entity, With<NodeDebugToken>>, 
+    nav_grid: Res<NavGrid>,
+    q_player: Query<&Transform, With<Player>>
+) {
     
+    if !nav_grid.complete {return;}
+    
+    for e in q.iter(){
+        cmd.entity(e).despawn();
+    }
+    const DISPLAY_DIR_NO :i32 = 10;
+    let ppos = q_player.single().translation.truncate();
+    let offset = Vec2::new(OFFSET_X + ppos.y, ppos.x + OFFSET_Y); // swap axes
+    let mut coords = offset * RESOLUTION;
+    let rounded_x = f32::round(coords.x) as i32;
+    let rounded_y = f32::round(coords.y) as i32;
+    
+    for x in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
+        for y in -DISPLAY_DIR_NO..DISPLAY_DIR_NO{
+            let idx = coord_to_1d(SIDE_NODE_NO, rounded_x+x, rounded_y+y) as usize;
+            let pos = nav_grid.positions[idx];
+
+            let is_valid = nav_grid.valid[idx];
+            let mut color = Color::WHITE;
+            if is_valid {
+                let blue = nav_grid.costs[idx] - 1.0;
+                color = Color::rgba(0.0, 1.0 - blue, blue, 0.08);
+            }
+            else {
+                color = Color::rgba(1.0, 0.0, 0.0, 0.08);
+            }
+
+            cmd.spawn_bundle(SpriteBundle{
+                sprite: Sprite {
+                    color,
+                    custom_size: Option::from(Vec2::new(12.0, 12.0)),
+                    ..Default::default()
+                },
+                transform: Transform::from_translation(pos.extend(0.5)),
+                ..Default::default()
+            })
+                .insert(NodeDebugToken);
+            ;
+        }
+    }
 }
 
 fn check_node_validity(q: &Query<(&Transform, &CollisionShape), With<Wall>>, radius: f32, pos: Vec2) 
@@ -209,6 +276,16 @@ fn coord_to_1d(side_dim: i32, x: i32, y:i32) -> i32
     y * side_dim + x
 }
 
+fn closest_cell(
+    position: Vec2
+) -> i32 {
+    let offset = Vec2::new(OFFSET_X + position.y, position.x + OFFSET_Y); // swap axes
+    let mut coords = offset * RESOLUTION;
+    let rounded_x = f32::round(coords.x) as i32;
+    let rounded_y = f32::round(coords.y) as i32;
+    return coord_to_1d(SIDE_NODE_NO, rounded_x, rounded_y);
+}
+
 fn rect_circle_overlap(rect_pos: Vec2, rect_dim: Vec2, rect_rot_z: f32, c_pos: Vec2, c_radius: f32)
     -> bool {
     let rel = c_pos - rect_pos;
@@ -244,18 +321,12 @@ mod tests{
         assert_eq!(x, false);
     }
     
-    
     #[test]
     fn test_point_within_rect_a() {
         let mut x = is_point_within_rect(Vec2::new(0.0, 1.1), Vec2::ZERO, Vec2::ONE, 45.0);
         assert_eq!(x, true);
         x = is_point_within_rect(Vec2::new(0.0, 1.1), Vec2::ZERO, Vec2::ONE, 0.0);
         assert_eq!(x, false);
-    }
-    
-    #[test]
-    fn test_point_within_rect_b() {
-
     }
     
     #[test]
@@ -290,5 +361,16 @@ mod tests{
         assert_eq!(a, vec![-1,-1,-1,-1,1,-1,4,5]);
         a = get_neighbours(4, 3, 3);
         assert_eq!(a, vec![10,11,-1,14,-1,-1,-1,-1]);
+    }
+    
+    #[test]
+    fn test_mutable_borrow(){
+        let mut orig = Vec2::new(5.0, 1.0);
+        do_a_thing(&orig);
+        assert_eq!(orig.x, 10.0);
+    }
+    
+    fn do_a_thing(data: &Vec2){
+        data.x = data.x + 5.0;
     }
 }
