@@ -11,7 +11,7 @@ pub struct CameraControl {
 
 pub fn init_main_camera(mut commands: Commands){
     let mut cam_bundle = OrthographicCameraBundle::new_2d();
-    cam_bundle.orthographic_projection.scale = 1.5;
+    cam_bundle.orthographic_projection.scale = 5.0;
     commands.spawn_bundle(cam_bundle)
         .insert(MainCamera)
         .insert(CameraControl{destination: Vec3::ZERO});

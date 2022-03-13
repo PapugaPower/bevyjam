@@ -3,8 +3,7 @@ use bevy_asset_loader::{AssetCollection, AssetLoader};
 use bevy_kira_audio::AudioSource;
 use heron::prelude::*;
 use iyes_bevy_util::BevyState;
-use crate::game::pathfinding::{generate_grid, NavGrid};
-
+use crate::game::nav_grid::{generate_grid, NavGrid};
 use crate::game::phys_layers::PhysLayer;
 use crate::game::timer::GameTimer;
 
